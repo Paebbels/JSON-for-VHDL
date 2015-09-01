@@ -1,0 +1,25 @@
+{  "ML505": {
+		"FPGA":        "XC5VLX50T-1FF1136",
+		"Eth": [{
+			"PHY-Int":   "GMII",
+			"Device":    "MARVEL_88E1111",
+			"Address":   "0x74"
+		}]
+	},
+	"KC705": {
+		"FPGA":        "XC7K325T-2FFG900C",
+		"Eth": [{
+			"PHY-Int":   "GMII",
+			"Device":    "MARVEL_88E1111",
+			"Address":   "0x74"
+		}],
+		"IIC": [{
+			"Type":      "Switch",
+			"Adr":       "0x85",
+			"Devices": [{
+				"Name":    "Si570",
+				"Address": "0x3A"
+			}]
+		}]
+	}
+}
