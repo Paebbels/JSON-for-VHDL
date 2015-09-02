@@ -1,0 +1,2 @@
+Boards2.vhdl:32:8:@0ms:(assertion note): jsonGetString(..., 'KC705/IIC/0/Devices/1/Type'):             Si570
+Boards2.vhdl:33:8:@0ms:(assertion note): jsonGetString(..., 'DE4/Ethernet/2/PHY_ManagementInterface'): MDIO

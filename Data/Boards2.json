@@ -1,0 +1,188 @@
+{	"S3SK200": {
+		"FPGADevice":		"XC3S200FT256",
+		"UART":					null,
+		"Ethernet":			null
+	},
+	"S3SK1000": {
+		"FPGADevice":		"XC3S1000FT256",
+		"UART":					null,
+		"Ethernet":			null
+	},
+	"S3ESK500": {       
+		"FPGADevice":		"XC3S500EFT256",
+		"UART":					null,
+		"Ethernet":			null
+	},
+	"S3ESK1600": {      
+		"FPGADevice":		"XC3S1600EFT256",
+		"UART":					null,
+		"Ethernet":			null
+	},
+	"ATLYS": {
+		"FPGADevice":		"XC6SLX45-3CSG324",
+		"UART":					{
+			"IsDTE":				true,
+			"FlowControl":	"None",
+			"BaudRate":			"921.6 kBd",
+			"BaudRate_Max":	"921.6 kBd"
+		},
+		"Ethernet":			[{
+			"IPStyle":									"SOFT",
+			"RS_DataInterface":					"GMII",
+			"PHY_Device":								"MARVEL_88E1111",
+			"PHY_DeviceAddress":				"0x74",
+			"PHY_DataInterface":				"GMII",
+			"PHY_ManagementInterface":	"MDIO"
+		}]
+	},
+	"KC705": {
+		"FPGADevice":			"XC7K325T-2FFG900C",
+		"UART":						{
+			"IsDTE":				true,
+			"FlowControl":	"None",
+			"BaudRate":			"921.6 kBd",
+			"BaudRate_Max":	"921.6 kBd"
+		},
+		"Ethernet":				[{
+			"IPStyle":									"SOFT",
+			"RS_DataInterface":					"GMII",
+			"PHY_Device":								"MARVEL_88E1111",
+			"PHY_DeviceAddress":				"0x74",
+			"PHY_DataInterface":				"GMII",
+			"PHY_ManagementInterface":	"MDIO"
+		}],
+		"IIC":						[{
+			"Type":					"Switch",
+			"Address":			"0x55",
+			"Devices":			[{
+				"Type":				"HDMI-Transmitter",
+				"Address":		"0x18"
+			},{
+				"Type":				"Si570",
+				"Address":		"0xA3"
+			}]
+		}]
+	},
+	"ML505": {
+		"FPGADevice":			"XC5VLX50T-1FF1136",
+		"UART":						{
+			"IsDTE":				false,
+			"FlowControl":	"None",
+			"BaudRate":			"115.2 kBd",
+			"BaudRate_Max":	"115.2 kBd"
+		},
+		"Ethernet":				[{
+			"IPStyle":									"SOFT",
+			"RS_DataInterface":					"GMII",
+			"PHY_Device":								"MARVEL_88E1111",
+			"PHY_DeviceAddress":				"0x74",
+			"PHY_DataInterface":				"GMII",
+			"PHY_ManagementInterface":	"MDIO"
+		}]
+	},
+	"ML605": {
+		"FPGADevice":			"XC6VLX240T-1FF1156",
+		"UART":						{
+			"IsDTE":				false,
+			"FlowControl":	"None",
+			"BaudRate":			"115.2 kBd",
+			"BaudRate_Max":	"115.2 kBd"
+		},
+		"Ethernet":				[{
+			"IPStyle":									"SOFT",
+			"RS_DataInterface":					"GMII",
+			"PHY_Device":								"MARVEL_88E1111",
+			"PHY_DeviceAddress":				"0x74",
+			"PHY_DataInterface":				"GMII",
+			"PHY_ManagementInterface":	"MDIO"
+		}]
+	},
+	"VC707": {
+		"FPGADevice":			"XC7VX485T-2FFG1761C",
+		"UART":						{
+			"IsDTE":				true,
+			"FlowControl":	"None",
+			"BaudRate":			"921.6 kBd",
+			"BaudRate_Max":	"921.6 kBd"
+		},
+		"Ethernet":				[{
+			"IPStyle":									"SOFT",
+			"RS_DataInterface":					"GMII",
+			"PHY_Device":								"MARVEL_88E1111",
+			"PHY_DeviceAddress":				"0x74",
+			"PHY_DataInterface":				"SGMII",
+			"PHY_ManagementInterface":	"MDIO"
+		}],
+		"IIC": [{
+			"Type":      "Switch",
+			"Adr":       "0x85",
+			"Devices": [{
+				"Name":    "Si570",
+				"Address": "0x3A"
+			}]
+		}]
+	},
+	"ZEDBOARD": {
+		"FPGADevice":			"XC7Z020-1CLG484",
+		"UART":						null,
+		"Ethernet":				null
+	},
+	"DE0": {
+		"FPGADevice":			"EP3C16F484",
+		"UART":						null,
+		"Ethernet":				null
+	},
+	"S2GXAV": {
+		"FPGADevice":			"EP2SGX90FF1508C3",
+		"UART":						null,
+		"Ethernet":				null
+	},
+	"DE4": {
+		"FPGADevice":			"EP4SGX230KF40C2",
+		"UART":						{
+			"IsDTE":				false,
+			"FlowControl":	"None",
+			"BaudRate":			"460.8 kBd",
+			"BaudRate_Max":	"460.8 kBd"
+		},
+		"Ethernet":				[{
+			"IPStyle":									"SOFT",
+			"RS_DataInterface":					"GMII",
+			"PHY_Device":								"MARVEL_88E1111",
+			"PHY_DeviceAddress":				"0x00",
+			"PHY_DataInterface":				"GMII",
+			"PHY_ManagementInterface":	"MDIO"
+		},{
+			"IPStyle":									"SOFT",
+			"RS_DataInterface":					"GMII",
+			"PHY_Device":								"MARVEL_88E1111",
+			"PHY_DeviceAddress":				"0x01",
+			"PHY_DataInterface":				"GMII",
+			"PHY_ManagementInterface":	"MDIO"
+		},{
+			"IPStyle":									"SOFT",
+			"RS_DataInterface":					"GMII",
+			"PHY_Device":								"MARVEL_88E1111",
+			"PHY_DeviceAddress":				"0x02",
+			"PHY_DataInterface":				"GMII",
+			"PHY_ManagementInterface":	"MDIO"
+		},{
+			"IPStyle":									"SOFT",
+			"RS_DataInterface":					"GMII",
+			"PHY_Device":								"MARVEL_88E1111",
+			"PHY_DeviceAddress":				"0x03",
+			"PHY_DataInterface":				"GMII",
+			"PHY_ManagementInterface":	"MDIO"
+		}]
+	},
+	"DE5": {
+		"FPGADevice":			"EP5SGXEA7N2F45C2",
+		"UART":						null,
+		"Ethernet":				null
+	},
+	"CUSTOM": {
+		"FPGADevice":			"Device is unknown for a custom board",
+		"UART":						null,
+		"Ethernet":				null
+	}
+}

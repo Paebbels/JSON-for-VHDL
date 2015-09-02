@@ -83,10 +83,19 @@ package JSON is
 	impure function jsonLoadFile(FileName : STRING) return T_JSON;
 	
 	function jsonParsePath(Path : STRING) return T_JSON_PATH;
-	
 	function jsonGetElementIndex(JSONContext : T_JSON; Path : STRING) return T_UINT16;
+	
+	function jsonTrim(str : STRING) return STRING;
+	function jsonNoParserError(JSONContext : T_JSON) return BOOLEAN;
+	function jsonGetErrorMessage(JSONContext : T_JSON) return STRING;
+	
 	function jsonGetBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
 	function jsonGetString(JSONContext : T_JSON; Path : STRING) return STRING;
+	
+	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
+	function jsonIsNull(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
+	function jsonIsString(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
+	function jsonIsNumber(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
 end package;
 
 
@@ -169,6 +178,16 @@ package body JSON is
 						((str2'length > len) and (str2(str2'low + len) = C_JSON_NUL)));		-- str2 is longer, but str_length equals len
 	end function;
 	
+	function jsonTrim(str : STRING) return STRING is
+	begin
+		for i in str'range loop
+			if (str(i) = C_JSON_NUL) then
+				return str(str'low to i - 1);
+			end if;
+		end loop;
+		return str;
+	end function;
+	
 	function to_natural_dec(str : STRING) return INTEGER is
 		variable Result			: NATURAL;
 		variable Digit			: INTEGER;
@@ -189,6 +208,16 @@ package body JSON is
 			Result(1 to imin(C_JSON_ERROR_MESSAGE_LENGTH, imax(1, str'length))) := ite((str'length > 0), str(1 to imin(C_JSON_ERROR_MESSAGE_LENGTH, str'length)), ConstNUL);
 		end if;
 		return Result;
+	end function;
+	
+	function jsonNoParserError(JSONContext : T_JSON) return BOOLEAN is
+	begin
+		return (JSONContext.Error(1) = C_JSON_NUL);
+	end function;
+	
+	function jsonGetErrorMessage(JSONContext : T_JSON) return STRING is
+	begin
+		return jsonTrim(JSONContext.Error);
 	end function;
 	
 	impure function jsonLoadFile(FileName : STRING) return T_JSON is
@@ -1210,10 +1239,41 @@ package body JSON is
 	
 	function jsonGetBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
+		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
 	begin
-		if (ElementIndex = 0) then
-			return FALSE;
-		end if;
-		return (JSONContext.Index(ElementIndex).ElementType = ELEM_TRUE);
+		if (ElementIndex = 0) then return FALSE; end if;
+		return (Element.ElementType = ELEM_TRUE);
+	end function;
+	
+	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
+		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
+		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
+	begin
+		if (ElementIndex = 0) then return FALSE; end if;
+		return (Element.ElementType = ELEM_TRUE) or (Element.ElementType = ELEM_FALSE);
+	end function;
+	
+	function jsonIsNull(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
+		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
+		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
+	begin
+		if (ElementIndex = 0) then return FALSE; end if;
+		return (Element.ElementType = ELEM_NULL);
+	end function;
+	
+	function jsonIsString(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
+		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
+		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
+	begin
+		if (ElementIndex = 0) then return FALSE; end if;
+		return (Element.ElementType = ELEM_STRING);
+	end function;
+	
+	function jsonIsNumber(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
+		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
+		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
+	begin
+		if (ElementIndex = 0) then return FALSE; end if;
+		return (Element.ElementType = ELEM_NUMBER);
 	end function;
 end package body;
