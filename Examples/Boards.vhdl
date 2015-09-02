@@ -4,7 +4,7 @@ use			IEEE.NUMERIC_STD.ALL;
 
 use			work.json.all;
 
-entity Top is
+entity Boards is
 	Port (
 		Clock	: in	STD_LOGIC;
 		Reset	: in	STD_LOGIC;
@@ -13,7 +13,7 @@ entity Top is
 end entity;
 
 
-architecture rtl of Top is
+architecture rtl of Boards is
 	-- define a json file and parse its content
 	constant ConfigFile		: STRING		:= "..\Data\Boards.json";
 	constant JSONContent	: T_JSON		:= jsonLoadFile(ConfigFile);

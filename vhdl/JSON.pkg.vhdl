@@ -290,7 +290,7 @@ package body JSON is
 		loopi : for i in 0 to Result.Index'high loop
 			exit when endfile(FileHandle);
 			readline(FileHandle, CurrentLine);
-			loopj : for j in CurrentLine.all'range loop
+			loopj : for j in CurrentLine'range loop
 				read(CurrentLine, CurrentChar, IsString);
 				next loopi when (IsString = FALSE);
 			
