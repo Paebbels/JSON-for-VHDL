@@ -1,0 +1,27 @@
+Reading C:/Mentor/QuestaSim64/10.2c/tcl/vsim/pref.tcl 
+
+# 10.2c
+
+# vsim -do {run -all; quit} -c -vopt json.Boards2 
+# //  Questa Sim-64
+# //  Version 10.2c Unknown Platform Jul 19 2013
+# //
+# //  Copyright 1991-2013 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //
+# Loading std.standard
+# Loading std.textio(body)
+# Loading ieee.std_logic_1164(body)
+# Loading ieee.numeric_std(body)
+# Loading work.json(body)
+# Loading work.boards2(rtl)#1
+# run -all 
+# ** Note: jsonGetString(..., 'DE4/Ethernet/2/PHY_ManagementInterface'): MDIO
+#    Time: 0 ns  Iteration: 0  Instance: /boards2
+# ** Note: jsonGetString(..., 'KC705/IIC/0/Devices/1/Type'):             Si570
+#    Time: 0 ns  Iteration: 0  Instance: /boards2
+#  quit 
