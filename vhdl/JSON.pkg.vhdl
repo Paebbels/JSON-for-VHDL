@@ -88,6 +88,9 @@ package JSON is
 	function jsonGetElementIndex(JSONContext : T_JSON; Path : STRING) return T_UINT16;
 	
 	function jsonTrim(str : STRING) return STRING;
+	procedure jsonStringAppend(StringBuffer : inout STRING; StringWriter : inout NATURAL; Message : STRING);
+	procedure jsonStringClear(StringBuffer : inout STRING; StringWriter : inout NATURAL); 
+	
 	function jsonNoParserError(JSONContext : T_JSON) return BOOLEAN;
 	function jsonGetErrorMessage(JSONContext : T_JSON) return STRING;
 	function jsonGetContent(JSONContext : T_JSON) return STRING;
@@ -162,7 +165,7 @@ package body JSON is
 		return	chr_isAlpha(chr) or chr_isDigit(chr) or chr_isSpecial(chr);
 	end function;
 	
-	function jsonStringmatch(str1 : STRING; str2 : STRING) return BOOLEAN is
+	function jsonStringMatch(str1 : STRING; str2 : STRING) return BOOLEAN is
 		constant len	: NATURAL 		:= imin(str1'length, str2'length);
 	begin
 		-- if both strings are empty
@@ -261,7 +264,7 @@ package body JSON is
 					"  type=" & T_ELEMENT_TYPE'image(Index(i).ElementType) & LF
 				 );
 		end loop;
-		report StringBuffer(1 to StringWriter - 1) severity NOTE;
+--		report StringBuffer(1 to StringWriter - 1) severity NOTE;
 	end procedure;
 	
 	impure function jsonLoadFile(FileName : STRING) return T_JSON is
@@ -303,7 +306,7 @@ package body JSON is
 			for i in ParserStack'range loop
 				jsonStringappend(StringBuffer, StringWriter, "        " & INTEGER'image(i) & ": state=" & T_PARSER_STATE'image(ParserStack(i).State) & "  index=" & INTEGER'image(ParserStack(i).Index) & LF);
 			end loop;
-			report StringBuffer(1 to StringWriter - 1) severity NOTE;
+--			report StringBuffer(1 to StringWriter - 1) severity NOTE;
 		end procedure;
 
 		constant PARSER_DEPTH		: POSITIVE			:= 128;
@@ -413,7 +416,7 @@ package body JSON is
 								StackPointer													:= StackPointer + 1;
 								ParserStack(StackPointer).State				:= ST_LIST;
 								ParserStack(StackPointer).Index				:= IndexWriter;
-							when '"' =>
+							when '"' =>		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
 								IndexWriter														:= IndexWriter + 1;
 								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: String - Add new IndexElement(STR) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
@@ -521,7 +524,7 @@ package body JSON is
 						
 					when ST_KEY =>
 						case CurrentChar is
-							when '"' =>
+							when '"' =>		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
 								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: KeyEnd - Setting End to " & INTEGER'image(ContentWriter) & LF); end if;
 								Result.Index(IndexWriter).StringEnd		:= ContentWriter;
 								ParserStack(StackPointer).State				:= ST_KEY_END;
@@ -693,6 +696,8 @@ package body JSON is
 								ParserStack(StackPointer).State				:= ST_KEY;
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when others =>
+								printParserStack(ParserStack(0 to StackPointer), StringBuffer, StringWriter);
+								report StringBuffer(1 to StringWriter - 1) severity NOTE; 
 								Result.Error := errorMessage("Parsing Delimiter2: Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
@@ -725,7 +730,7 @@ package body JSON is
 								StackPointer													:= StackPointer - 1;
 								ParserStack(StackPointer).State				:= ST_LIST;
 								ParserStack(StackPointer).Index				:= IndexWriter;
-							when '"' =>
+							when '"' =>		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
 								IndexWriter														:= IndexWriter + 1;
 								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: String - Add new IndexElement(STR) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
@@ -833,7 +838,7 @@ package body JSON is
 					
 					when ST_STRING =>
 						case CurrentChar is
-							when '"' =>
+							when '"' =>		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
 								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: StringEnd - Setting End to " & INTEGER'image(ContentWriter) & LF); end if;
 								Result.Index(IndexWriter).StringEnd		:= ContentWriter;
 								ParserStack(StackPointer).State				:= ST_STRING_END;
@@ -851,9 +856,11 @@ package body JSON is
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
 									StackPointer												:= StackPointer - 2;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
-								else
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
 									StackPointer												:= StackPointer - 1;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
+								else
+									report "XXX" severity FAILURE;
 								end if;
 							-- check if allowed
 							when ',' =>
@@ -861,12 +868,14 @@ package body JSON is
 									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER2;
-									ParserStack(StackPointer).Index			:= 0;
-								else
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
 									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
-									ParserStack(StackPointer).Index			:= 0;
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								else
+									report "XXX" severity FAILURE;
 								end if;
 							when others =>
 								Result.Error := errorMessage("Parsing StringEnd: Char '" & CurrentChar & "' is not allowed.");
@@ -898,9 +907,11 @@ package body JSON is
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
 									StackPointer												:= StackPointer - 2;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
-								else
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
 									StackPointer												:= StackPointer - 1;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
+								else
+									report "XXX" severity FAILURE;
 								end if;
 							-- check if allowed
 							when ',' =>
@@ -909,12 +920,14 @@ package body JSON is
 									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER2;
-									ParserStack(StackPointer).Index			:= 0;
-								else
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
 									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
-									ParserStack(StackPointer).Index			:= 0;
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								else
+									report "XXX" severity FAILURE;
 								end if;
 							when others =>
 								Result.Error := errorMessage("Parsing Number: Char '" & CurrentChar & "' is not allowed.");
@@ -930,9 +943,11 @@ package body JSON is
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
 									StackPointer												:= StackPointer - 2;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
-								else
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
 									StackPointer												:= StackPointer - 1;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
+								else
+									report "XXX" severity FAILURE;
 								end if;
 							-- check if allowed
 							when ',' =>
@@ -940,12 +955,14 @@ package body JSON is
 									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER2;
-									ParserStack(StackPointer).Index			:= 0;
-								else
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
 									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
-									ParserStack(StackPointer).Index			:= 0;
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								else
+									report "XXX" severity FAILURE;
 								end if;
 							when others =>
 								Result.Error := errorMessage("Parsing NumberEnd: Char '" & CurrentChar & "' is not allowed.");
@@ -961,9 +978,11 @@ package body JSON is
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
 									StackPointer												:= StackPointer - 2;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
-								else
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
 									StackPointer												:= StackPointer - 1;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
+								else
+									report "XXX" severity FAILURE;
 								end if;
 							-- check if allowed
 							when ',' =>
@@ -971,12 +990,14 @@ package body JSON is
 									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER2;
-									ParserStack(StackPointer).Index			:= 0;
-								else
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
 									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
-									ParserStack(StackPointer).Index			:= 0;
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								else
+									report "XXX" severity FAILURE;
 								end if;
 							when others =>
 								Result.Error := errorMessage("Parsing NullEnd: Char '" & CurrentChar & "' is not allowed.");
@@ -992,9 +1013,11 @@ package body JSON is
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
 									StackPointer												:= StackPointer - 2;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
-								else
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
 									StackPointer												:= StackPointer - 1;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
+								else
+									report "XXX" severity FAILURE;
 								end if;
 							-- check if allowed
 							when ',' =>
@@ -1002,12 +1025,14 @@ package body JSON is
 									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER2;
-									ParserStack(StackPointer).Index			:= 0;
-								else
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
 									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
-									ParserStack(StackPointer).Index			:= 0;
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								else
+									report "XXX" severity FAILURE;
 								end if;
 							when others =>
 								Result.Error := errorMessage("Parsing TrueEnd: Char '" & CurrentChar & "' is not allowed.");
@@ -1023,9 +1048,11 @@ package body JSON is
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
 									StackPointer												:= StackPointer - 2;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
-								else
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
 									StackPointer												:= StackPointer - 1;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
+								else
+									report "XXX" severity FAILURE;
 								end if;
 							-- check if allowed
 							when ',' =>
@@ -1033,12 +1060,14 @@ package body JSON is
 									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER2;
-									ParserStack(StackPointer).Index			:= 0;
-								else
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
 									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
-									ParserStack(StackPointer).Index			:= 0;
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								else
+									report "XXX" severity FAILURE;
 								end if;
 							when others =>
 								Result.Error := errorMessage("Parsing FalseEnd: Char '" & CurrentChar & "' is not allowed.");
@@ -1054,9 +1083,11 @@ package body JSON is
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
 									StackPointer												:= StackPointer - 2;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
-								else
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
 									StackPointer												:= StackPointer - 1;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
+								else
+									report "XXX" severity FAILURE;
 								end if;
 							-- check if allowed
 							when ',' =>
@@ -1064,12 +1095,14 @@ package body JSON is
 									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER2;
-									ParserStack(StackPointer).Index			:= 0;
-								else
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
 									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
-									ParserStack(StackPointer).Index			:= 0;
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								else
+									report "XXX" severity FAILURE;
 								end if;
 							when others =>
 								Result.Error := errorMessage("Parsing NumberEnd: Char '" & CurrentChar & "' is not allowed.");
@@ -1082,8 +1115,6 @@ package body JSON is
 					printParserStack(ParserStack(0 to StackPointer), StringBuffer, StringWriter);
 					jsonReportIndex(Result.Index(0 to IndexWriter), Result.Content(1 to ContentWriter), StringBuffer, StringWriter);
 					report StringBuffer(1 to StringWriter - 1) severity NOTE; 
---					printParserStack(ParserStack(0 to StackPointer));
---					jsonReportIndex(Result.Index(0 to IndexWriter), Result.Content(1 to ContentWriter));
 				end if;
 			end loop;
 		end loop;

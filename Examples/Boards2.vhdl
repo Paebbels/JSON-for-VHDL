@@ -28,23 +28,43 @@ architecture rtl of Boards2 is
 		report msg severity NOTE;
 	end procedure;
 	
+	function transform return STRING is
+		variable StringBuffer		: STRING(1 to 2**15);
+		variable StringWriter		: T_UINT16;
+	begin
+		jsonStringClear(StringBuffer, StringWriter);
+		jsonReportIndex(JSONContent.Index(0 to JSONContent.IndexCount - 1), JSONContent.Content(1 to JSONContent.ContentCount), StringBuffer, StringWriter);
+		return StringBuffer(1 to StringWriter - 1);
+	end function;
+	
 	-- dummy signal so the entity is not empty for synthesis
 	signal Toggle	: STD_LOGIC		:= '0';
 	
 begin
 	-- report a JSON parser error if one occured
---	assert jsonNoParserError(JSONContent) report "JSON parser error: " & jsonGetErrorMessage(JSONContent) severity ERROR;
 	assertMessage(jsonNoParserError(JSONContent), "JSON parser error: " & jsonGetErrorMessage(JSONContent));
+	
 	-- dump the internal compressed STRING buffer
---	assert FALSE report "JSON: " & jsonTrim(JSONContent.Content) severity NOTE;
+--	printMessage("JSONContent.Content: " & jsonTrim(JSONContent.Content));
+
 	-- dump the internal index structure
---	jsonReportIndex(JSONContent.Index(0 to JSONContent.IndexCount - 1), JSONContent.Content(1 to JSONContent.ContentCount)); 
+	-- ===========================================================================
+	-- for Vivado, because assert statements got removed from the VHDL feature list
+--	process
+--		variable StringBuffer		: STRING(1 to 2**15);
+--		variable StringWriter		: T_UINT16;
+--	begin
+--		jsonStringClear(StringBuffer, StringWriter);
+--		jsonReportIndex(JSONContent.Index(0 to JSONContent.IndexCount - 1), JSONContent.Content(1 to JSONContent.ContentCount), StringBuffer, StringWriter);
+--		printMessage(StringBuffer(1 to StringWriter - 1));
+--		wait;
+--	end process;
+
+	-- ===========================================================================
+	-- for ISE, because wait; is not supported in synthesis
+	printMessage(transform);
 	
 	-- select different values from data structure
---	assert FALSE report "jsonGetString(..., 'KC705/IIC/0/Devices/1/Type'):             " & jsonGetString(JSONContent, "KC705/IIC/0/Devices/1/Type") severity NOTE;
---	assert FALSE report "jsonGetString(..., 'DE4/Ethernet/2/PHY_ManagementInterface'): " & jsonGetString(JSONContent, "DE4/Ethernet/2/PHY_ManagementInterface") severity NOTE;
-	
-	-- for Vivado, because assert statements got removed from the VHDL feature list ->
 	printMessage("jsonGetString(..., 'KC705/IIC/0/Devices/1/Type'):             " & jsonGetString(JSONContent, "KC705/IIC/0/Devices/1/Type"));
 	printMessage("jsonGetString(..., 'DE4/Ethernet/2/PHY_ManagementInterface'): " & jsonGetString(JSONContent, "DE4/Ethernet/2/PHY_ManagementInterface"));
 	
