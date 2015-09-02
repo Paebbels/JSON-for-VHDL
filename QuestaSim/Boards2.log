@@ -3,7 +3,7 @@ Reading C:/Mentor/QuestaSim64/10.2c/tcl/vsim/pref.tcl
 # 10.2c
 
 # vsim -do {run -all; quit} -c -vopt json.Boards2 
-# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vsim-3813) Design is being optimized due to module recompilation...
 # 
 # //  Questa Sim-64
 # //  Version 10.2c Unknown Platform Jul 19 2013

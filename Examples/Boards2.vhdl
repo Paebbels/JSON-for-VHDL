@@ -65,6 +65,7 @@ begin
 	printMessage(transform);
 	
 	-- select different values from data structure
+--	printMessage("jsonGetString(..., 'KC705/FPGA'):                             " & jsonGetString(JSONContent, "KC705/FPGA"));
 	printMessage("jsonGetString(..., 'KC705/IIC/0/Devices/1/Type'):             " & jsonGetString(JSONContent, "KC705/IIC/0/Devices/1/Type"));
 	printMessage("jsonGetString(..., 'DE4/Ethernet/2/PHY_ManagementInterface'): " & jsonGetString(JSONContent, "DE4/Ethernet/2/PHY_ManagementInterface"));
 	

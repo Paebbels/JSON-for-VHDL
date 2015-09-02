@@ -1,0 +1,32 @@
+# general file excludes
+~*.tmp
+~*.docx
+*.fmt
+*~
+~$*
+
+# ignore Xilinx ISE files
+/Xilinx\ ISE/**/*.*
+/Xilinx\ ISE/**/ise
+!/Xilinx\ ISE/**/*.xise
+!/Xilinx\ ISE/**/iseconfig/filter.filter
+
+# ignore Xilinx Vivado files
+/Xilinx\ Vivado/**/*.*
+!/Xilinx\ Vivado/**/*.xpr
+
+# ignore QuestaSim files
+/QuestaSim/*
+/QuestaSim/**/*.*
+!/QuestaSim/*.cmd
+!/QuestaSim/*.log
+
+# ignore GHDL files
+/ghdl/**/*.*
+!/ghdl/*.cmd
+!/ghdl/*.log
+
+# general whitelist
+!.publish
+!.git*
+
