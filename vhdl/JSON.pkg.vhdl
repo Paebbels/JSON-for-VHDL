@@ -65,9 +65,11 @@ package JSON is
 	constant C_JSON_ERROR_MESSAGE_LENGTH	: NATURAL		:= 64;
 
 	type T_JSON is record
-		Content			: STRING(1 to T_UINT16'high);
-		Index				: T_JSON_INDEX(0 to 1023);
-		Error				: STRING(1 to C_JSON_ERROR_MESSAGE_LENGTH);
+		Content				: STRING(1 to T_UINT16'high);
+		ContentCount	: T_UINT16;
+		Index					: T_JSON_INDEX(0 to 1023);
+		IndexCount		: T_UINT16;
+		Error					: STRING(1 to C_JSON_ERROR_MESSAGE_LENGTH);
 	end record;
 	
 	type T_JSON_PATH_ELEMENT_TYPE is (PATH_ELEM_KEY, PATH_ELEM_INDEX);
@@ -88,6 +90,9 @@ package JSON is
 	function jsonTrim(str : STRING) return STRING;
 	function jsonNoParserError(JSONContext : T_JSON) return BOOLEAN;
 	function jsonGetErrorMessage(JSONContext : T_JSON) return STRING;
+	function jsonGetContent(JSONContext : T_JSON) return STRING;
+	
+	procedure jsonReportIndex(Index : T_JSON_INDEX; Content : STRING; StringBuffer : inout STRING; StringWriter : inout NATURAL);
 	
 	function jsonGetBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
 	function jsonGetString(JSONContext : T_JSON; Path : STRING) return STRING;
@@ -157,7 +162,7 @@ package body JSON is
 		return	chr_isAlpha(chr) or chr_isDigit(chr) or chr_isSpecial(chr);
 	end function;
 	
-	function str_match(str1 : STRING; str2 : STRING) return BOOLEAN is
+	function jsonStringmatch(str1 : STRING; str2 : STRING) return BOOLEAN is
 		constant len	: NATURAL 		:= imin(str1'length, str2'length);
 	begin
 		-- if both strings are empty
@@ -174,9 +179,24 @@ package body JSON is
 		end loop;
 		-- check special cases, 
 		return (((str1'length = len) and (str2'length = len)) or									-- both strings are fully consumed and equal
-						((str1'length > len) and (str1(str1'low + len) = C_JSON_NUL)) or	-- str1 is longer, but str_length equals len
-						((str2'length > len) and (str2(str2'low + len) = C_JSON_NUL)));		-- str2 is longer, but str_length equals len
+						((str1'length > len) and (str1(str1'low + len) = C_JSON_NUL)) or	-- str1 is longer, but jsonStringlength equals len
+						((str2'length > len) and (str2(str2'low + len) = C_JSON_NUL)));		-- str2 is longer, but jsonStringlength equals len
 	end function;
+	
+	procedure jsonStringAppend(StringBuffer : inout STRING; StringWriter : inout NATURAL; Message : STRING) is
+		constant StringStart	: NATURAL := StringWriter + 1;
+		constant StringEnd		: NATURAL := imin(StringBuffer'high, StringWriter + Message'length);
+		constant Length				: NATURAL := StringEnd - StringStart + 1;
+	begin
+		StringBuffer(StringStart to StringEnd)	:= Message(Message'low to Message'low + Length - 1);
+		StringWriter														:= StringEnd;
+	end procedure;
+	
+	procedure jsonStringClear(StringBuffer : inout STRING; StringWriter : inout NATURAL) is
+	begin
+		StringBuffer	:= (StringBuffer'range => C_JSON_NUL);
+		StringWriter	:= 0;
+	end procedure;
 	
 	function jsonTrim(str : STRING) return STRING is
 	begin
@@ -219,6 +239,30 @@ package body JSON is
 	begin
 		return jsonTrim(JSONContext.Error);
 	end function;
+		
+	function jsonGetContent(JSONContext : T_JSON) return STRING is
+	begin
+		return JSONContext.Content(1 to JSONContext.ContentCount);
+	end function;
+	
+	procedure jsonReportIndex(Index : T_JSON_INDEX; Content : STRING; StringBuffer : inout STRING; StringWriter : inout NATURAL) is
+--		variable StringBuffer		: STRING(1 to 2**15);
+--		variable StringWriter		: T_UINT16;
+	begin
+--		jsonStringClear(StringBuffer, StringWriter);
+		jsonStringappend(StringBuffer, StringWriter, LF & "Index: depth=" & INTEGER'image(Index'length) & LF);
+		for i in Index'range loop
+			jsonStringappend(StringBuffer, StringWriter, INTEGER'image(i) &
+					": index=" & INTEGER'image(Index(i).Index) &
+					"  child=" & INTEGER'image(Index(i).ChildIndex) &
+					"  next=" & INTEGER'image(Index(i).NextIndex) &
+					"  start=" & INTEGER'image(Index(i).StringStart) &
+					"  end=" & INTEGER'image(Index(i).StringEnd) &
+					"  type=" & T_ELEMENT_TYPE'image(Index(i).ElementType) & LF
+				 );
+		end loop;
+		report StringBuffer(1 to StringWriter - 1) severity NOTE;
+	end procedure;
 	
 	impure function jsonLoadFile(FileName : STRING) return T_JSON is
 		file FileHandle				: TEXT open READ_MODE is FileName;
@@ -250,35 +294,29 @@ package body JSON is
 		
 		type T_PARSER_STACK		is array(NATURAL range <>) of T_PARSER_STACK_ELEMENT;
 
-		procedure printParserStack(ParserStack : T_PARSER_STACK) is
+		procedure printParserStack(ParserStack : T_PARSER_STACK; StringBuffer : inout STRING; StringWriter : inout NATURAL) is
+--		variable StringBuffer		: STRING(1 to 2**15);
+--		variable StringWriter		: T_UINT16;
 		begin
-			report "  ParserStack: depth=" & INTEGER'image(ParserStack'length) severity NOTE;
+--			jsonStringClear(StringBuffer, StringWriter);
+			jsonStringappend(StringBuffer, StringWriter, "ParserStack: depth=" & INTEGER'image(ParserStack'length) & LF);
 			for i in ParserStack'range loop
-				report "    " & INTEGER'image(i) & ": state=" & T_PARSER_STATE'image(ParserStack(i).State) & "  index=" & INTEGER'image(ParserStack(i).Index) severity NOTE;
+				jsonStringappend(StringBuffer, StringWriter, "        " & INTEGER'image(i) & ": state=" & T_PARSER_STATE'image(ParserStack(i).State) & "  index=" & INTEGER'image(ParserStack(i).Index) & LF);
 			end loop;
+			report StringBuffer(1 to StringWriter - 1) severity NOTE;
 		end procedure;
-		
-		procedure printIndex(Index : T_JSON_INDEX; Content : STRING) is
-		begin
-			report "  Index: depth=" & INTEGER'image(Index'length) severity NOTE;
-			for i in Index'range loop
-				report "    " & INTEGER'image(i) &
-						": index=" & INTEGER'image(Index(i).Index) &
-						"  child=" & INTEGER'image(Index(i).ChildIndex) &
-						"  next=" & INTEGER'image(Index(i).NextIndex) &
-						"  start=" & INTEGER'image(Index(i).StringStart) &
-						"  end=" & INTEGER'image(Index(i).StringEnd) &
-						"  type=" & T_ELEMENT_TYPE'image(Index(i).ElementType)
-					 severity NOTE;
-			end loop;
-		end procedure;
-		
+
 		constant PARSER_DEPTH		: POSITIVE			:= 128;
 		variable StackPointer		: NATURAL range 0 to PARSER_DEPTH - 1;
 		variable ParserStack		: T_PARSER_STACK(0 to PARSER_DEPTH - 1);
 		variable ContentWriter	: T_UINT16;
 		variable IndexWriter		: T_UINT16;
+		
+		variable StringBuffer		: STRING(1 to 2**12);
+		variable StringWriter		: T_UINT16;
 	begin
+		jsonStringClear(StringBuffer, StringWriter);
+		
 		StackPointer										:= 0;
 		ParserStack(StackPointer).State	:= ST_HEADER;
 		ParserStack(StackPointer).Index	:= 0;
@@ -290,30 +328,33 @@ package body JSON is
 		loopi : for i in 0 to Result.Index'high loop
 			exit when endfile(FileHandle);
 			readline(FileHandle, CurrentLine);
-			loopj : for j in CurrentLine'range loop
+			loopj : for j in 0 to CurrentLine'right loop
 				read(CurrentLine, CurrentChar, IsString);
 				next loopi when (IsString = FALSE);
 			
-				if (VERBOSE = TRUE) then report "---------------------------------------------------" & LF &
-						 "Parser State:" & LF &
-						 "  CurrentChar='" & CurrentChar & "'" & LF &
-						 "  State=" & T_PARSER_STATE'image(ParserStack(StackPointer).State) & LF &
-						 "  StackPointer=" & INTEGER'image(StackPointer)
-					severity NOTE; end if;
+				jsonStringClear(StringBuffer, StringWriter);
+				if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, Lf &
+						"---------------------------------------------------" & LF &
+						"Parser State:" & 
+						"  CurrentChar='" & CurrentChar & "'" & 
+						"  State=" & T_PARSER_STATE'image(ParserStack(StackPointer).State) & 
+						"  StackPointer=" & INTEGER'image(StackPointer) & LF &
+						"---------------------------------------------------" & LF);
+				end if;
 			
 				case ParserStack(StackPointer).State is
 					when ST_HEADER =>
 						case CurrentChar is
 							when ' ' | HT =>												next loopj;
 							when '{' =>
-								if (VERBOSE = TRUE) then report "Found: Object - Add new IndexElement(OBJ) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Object - Add new IndexElement(OBJ) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_OBJECT;
 								StackPointer													:= StackPointer + 1;
 								ParserStack(StackPointer).State				:= ST_OBJECT;
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when '[' =>
-								if (VERBOSE = TRUE) then report "Found: List - Add new IndexElement(LIST) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: List - Add new IndexElement(LIST) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_LIST;
 								StackPointer													:= StackPointer + 1;
@@ -327,14 +368,14 @@ package body JSON is
 					when ST_OBJECT =>
 						case CurrentChar is
 							when ' ' | HT =>												next loopj;
-							when '"' =>
+							when '"' =>		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: Key - Add new IndexElement(KEY) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Key - Add new IndexElement(KEY) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_KEY;
 								Result.Index(IndexWriter).StringStart	:= ContentWriter + 1;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 
 								StackPointer													:= StackPointer + 1;
@@ -350,11 +391,11 @@ package body JSON is
 							when ' ' | HT =>												next loopj;
 							when '{' =>
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: Object - Add new IndexElement(OBJ) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Object - Add new IndexElement(OBJ) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_OBJECT;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer + 1;
@@ -362,11 +403,11 @@ package body JSON is
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when '[' =>
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: List - Add new IndexElement(LIST) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: List - Add new IndexElement(LIST) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_LIST;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer + 1;
@@ -374,12 +415,12 @@ package body JSON is
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when '"' =>
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: String - Add new IndexElement(STR) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: String - Add new IndexElement(STR) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_STRING;
 								Result.Index(IndexWriter).StringStart	:= ContentWriter + 1;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer + 1;
@@ -390,12 +431,12 @@ package body JSON is
 								Result.Content(ContentWriter)					:= CurrentChar;
 								
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: Number - Add new IndexElement(NUM) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Number - Add new IndexElement(NUM) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_NUMBER;
 								Result.Index(IndexWriter).StringStart	:= ContentWriter;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer + 1;
@@ -413,13 +454,13 @@ package body JSON is
 									end if;
 								end loop;
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: NULL - Add new IndexElement(NULL) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: NULL - Add new IndexElement(NULL) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_NULL;
 								Result.Index(IndexWriter).StringStart	:= 0;
 								Result.Index(IndexWriter).StringEnd		:= 0;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer + 1;
@@ -437,13 +478,13 @@ package body JSON is
 									end if;
 								end loop;
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: TRUE - Add new IndexElement(TRUE) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: TRUE - Add new IndexElement(TRUE) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_TRUE;
 								Result.Index(IndexWriter).StringStart	:= 0;
 								Result.Index(IndexWriter).StringEnd		:= 0;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer + 1;
@@ -461,13 +502,13 @@ package body JSON is
 									end if;
 								end loop;
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: FALSE - Add new IndexElement(FALSE) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: FALSE - Add new IndexElement(FALSE) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_FALSE;
 								Result.Index(IndexWriter).StringStart	:= 0;
 								Result.Index(IndexWriter).StringEnd		:= 0;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer + 1;
@@ -481,7 +522,7 @@ package body JSON is
 					when ST_KEY =>
 						case CurrentChar is
 							when '"' =>
-								if (VERBOSE = TRUE) then report "Found: KeyEnd - Setting End to " & INTEGER'image(ContentWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: KeyEnd - Setting End to " & INTEGER'image(ContentWriter) & LF); end if;
 								Result.Index(IndexWriter).StringEnd		:= ContentWriter;
 								ParserStack(StackPointer).State				:= ST_KEY_END;
 							when others =>
@@ -493,7 +534,7 @@ package body JSON is
 						case CurrentChar is
 							when ' ' | HT =>												next loopj;
 							when ':' =>
-								if (VERBOSE = TRUE) then report "Found: Delimiter1 (':')" severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter1 (':')" & LF); end if;
 								ParserStack(StackPointer).State				:= ST_DELIMITER1;
 							when others =>
 								Result.Error := errorMessage("Parsing KeyEnd: Char '" & CurrentChar & "' is not allowed.");
@@ -506,11 +547,11 @@ package body JSON is
 							when ' ' | HT =>												next loopj;
 							when '{' =>
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: Object - Add new IndexElement(OBJ) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Object - Add new IndexElement(OBJ) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_OBJECT;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer + 1;
@@ -518,11 +559,11 @@ package body JSON is
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when '[' =>
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: List - Add new IndexElement(LIST) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: List - Add new IndexElement(LIST) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_LIST;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer + 1;
@@ -530,12 +571,12 @@ package body JSON is
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when '"' =>		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: String - Add new IndexElement(STR) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: String - Add new IndexElement(STR) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_STRING;
 								Result.Index(IndexWriter).StringStart	:= ContentWriter + 1;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer + 1;
@@ -546,12 +587,12 @@ package body JSON is
 								Result.Content(ContentWriter)					:= CurrentChar;
 								
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: Number - Add new IndexElement(NUM) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Number - Add new IndexElement(NUM) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_NUMBER;
 								Result.Index(IndexWriter).StringStart	:= ContentWriter;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer + 1;
@@ -569,13 +610,13 @@ package body JSON is
 									end if;
 								end loop;
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: NULL - Add new IndexElement(NULL) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: NULL - Add new IndexElement(NULL) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_NULL;
 								Result.Index(IndexWriter).StringStart	:= 0;
 								Result.Index(IndexWriter).StringEnd		:= 0;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer + 1;
@@ -593,13 +634,13 @@ package body JSON is
 									end if;
 								end loop;
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: TRUE - Add new IndexElement(TRUE) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: TRUE - Add new IndexElement(TRUE) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_TRUE;
 								Result.Index(IndexWriter).StringStart	:= 0;
 								Result.Index(IndexWriter).StringEnd		:= 0;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer + 1;
@@ -617,13 +658,13 @@ package body JSON is
 									end if;
 								end loop;
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: FALSE - Add new IndexElement(FALSE) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: FALSE - Add new IndexElement(FALSE) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_FALSE;
 								Result.Index(IndexWriter).StringStart	:= 0;
 								Result.Index(IndexWriter).StringEnd		:= 0;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
 								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer + 1;
@@ -640,12 +681,12 @@ package body JSON is
 							when ' ' | HT =>												next loopj;
 							when '"' =>		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: Key - Add new IndexElement(KEY) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Key - Add new IndexElement(KEY) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_KEY;
 								Result.Index(IndexWriter).StringStart	:= ContentWriter + 1;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 2).Index) & " as next." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 2).Index) & " as next." & LF); end if;
 								Result.Index(ParserStack(StackPointer - 2).Index).NextIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer - 2;
@@ -662,11 +703,11 @@ package body JSON is
 							when ' ' | HT =>												next loopj;
 							when '{' =>
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: Object - Add new IndexElement(OBJ) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Object - Add new IndexElement(OBJ) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_OBJECT;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." & LF); end if;
 								Result.Index(ParserStack(StackPointer - 1).Index).NextIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer - 1;
@@ -674,11 +715,11 @@ package body JSON is
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when '[' =>
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: List - Add new IndexElement(LIST) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: List - Add new IndexElement(LIST) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_LIST;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." & LF); end if;
 								Result.Index(ParserStack(StackPointer - 1).Index).NextIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer - 1;
@@ -686,12 +727,12 @@ package body JSON is
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when '"' =>
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: String - Add new IndexElement(STR) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: String - Add new IndexElement(STR) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_STRING;
 								Result.Index(IndexWriter).StringStart	:= ContentWriter + 1;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." & LF); end if;
 								Result.Index(ParserStack(StackPointer - 1).Index).NextIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer - 1;
@@ -702,12 +743,12 @@ package body JSON is
 								Result.Content(ContentWriter)					:= CurrentChar;
 								
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: Number - Add new IndexElement(NUM) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Number - Add new IndexElement(NUM) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_NUMBER;
 								Result.Index(IndexWriter).StringStart	:= ContentWriter;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." & LF); end if;
 								Result.Index(ParserStack(StackPointer - 1).Index).NextIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer - 1;
@@ -725,13 +766,13 @@ package body JSON is
 									end if;
 								end loop;
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: NULL - Add new IndexElement(NULL) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: NULL - Add new IndexElement(NULL) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_NULL;
 								Result.Index(IndexWriter).StringStart	:= 0;
 								Result.Index(IndexWriter).StringEnd		:= 0;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." & LF); end if;
 								Result.Index(ParserStack(StackPointer - 1).Index).NextIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer - 1;
@@ -749,13 +790,13 @@ package body JSON is
 									end if;
 								end loop;
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: TRUE - Add new IndexElement(TRUE) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: TRUE - Add new IndexElement(TRUE) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_TRUE;
 								Result.Index(IndexWriter).StringStart	:= 0;
 								Result.Index(IndexWriter).StringEnd		:= 0;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." & LF); end if;
 								Result.Index(ParserStack(StackPointer - 1).Index).NextIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer - 1;
@@ -773,13 +814,13 @@ package body JSON is
 									end if;
 								end loop;
 								IndexWriter														:= IndexWriter + 1;
-								if (VERBOSE = TRUE) then report "Found: FALSE - Add new IndexElement(FALSE) at pos " & INTEGER'image(IndexWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: FALSE - Add new IndexElement(FALSE) at pos " & INTEGER'image(IndexWriter) & LF); end if;
 								Result.Index(IndexWriter).Index				:= IndexWriter;
 								Result.Index(IndexWriter).ElementType	:= ELEM_FALSE;
 								Result.Index(IndexWriter).StringStart	:= 0;
 								Result.Index(IndexWriter).StringEnd		:= 0;
 								
-								if (VERBOSE = TRUE) then report "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." & LF); end if;
 								Result.Index(ParserStack(StackPointer - 1).Index).NextIndex	:= IndexWriter;
 								
 								StackPointer													:= StackPointer - 1;
@@ -793,7 +834,7 @@ package body JSON is
 					when ST_STRING =>
 						case CurrentChar is
 							when '"' =>
-								if (VERBOSE = TRUE) then report "Found: StringEnd - Setting End to " & INTEGER'image(ContentWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: StringEnd - Setting End to " & INTEGER'image(ContentWriter) & LF); end if;
 								Result.Index(IndexWriter).StringEnd		:= ContentWriter;
 								ParserStack(StackPointer).State				:= ST_STRING_END;
 							when others =>
@@ -806,7 +847,7 @@ package body JSON is
 							when ' ' | HT =>												next loopj;
 							-- check if allowed
 							when '}' | ']' =>
-								if (VERBOSE = TRUE) then report "Found: Closing" severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Closing" & LF); end if;
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
 									StackPointer												:= StackPointer - 2;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
@@ -817,12 +858,12 @@ package body JSON is
 							-- check if allowed
 							when ',' =>
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
-									if (VERBOSE = TRUE) then report "Found: Delimiter2 (Obj)" severity NOTE; end if;
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER2;
 									ParserStack(StackPointer).Index			:= 0;
 								else
-									if (VERBOSE = TRUE) then report "Found: Delimiter3 (List)" severity NOTE; end if;
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
 									ParserStack(StackPointer).Index			:= 0;
@@ -835,7 +876,7 @@ package body JSON is
 					when ST_NUMBER =>
 						case CurrentChar is
 							when ' ' | HT =>
-								if (VERBOSE = TRUE) then report "Found: WS after number - Setting End to " & INTEGER'image(ContentWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: WS after number - Setting End to " & INTEGER'image(ContentWriter) & LF); end if;
 								Result.Index(IndexWriter).StringEnd		:= ContentWriter;
 								ParserStack(StackPointer).State				:= ST_NUMBER_END;
 							when '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' =>
@@ -852,7 +893,7 @@ package body JSON is
 								Result.Content(ContentWriter)					:= CurrentChar;
 							-- check if allowed
 							when '}' | ']' =>
-								if (VERBOSE = TRUE) then report "Found: Closing - Setting End to " & INTEGER'image(ContentWriter) severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Closing - Setting End to " & INTEGER'image(ContentWriter) & LF); end if;
 								Result.Index(IndexWriter).StringEnd		:= ContentWriter;
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
 									StackPointer												:= StackPointer - 2;
@@ -865,12 +906,12 @@ package body JSON is
 							when ',' =>
 								Result.Index(IndexWriter).StringEnd		:= ContentWriter;
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
-									if (VERBOSE = TRUE) then report "Found: Delimiter2 (Obj)" severity NOTE; end if;
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER2;
 									ParserStack(StackPointer).Index			:= 0;
 								else
-									if (VERBOSE = TRUE) then report "Found: Delimiter3 (List)" severity NOTE; end if;
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
 									ParserStack(StackPointer).Index			:= 0;
@@ -885,7 +926,7 @@ package body JSON is
 							when ' ' | HT =>												next loopj;
 							-- check if allowed
 							when '}' | ']' =>
-								if (VERBOSE = TRUE) then report "Found: Closing" severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Closing" & LF); end if;
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
 									StackPointer												:= StackPointer - 2;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
@@ -896,12 +937,12 @@ package body JSON is
 							-- check if allowed
 							when ',' =>
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
-									if (VERBOSE = TRUE) then report "Found: Delimiter2 (Obj)" severity NOTE; end if;
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER2;
 									ParserStack(StackPointer).Index			:= 0;
 								else
-									if (VERBOSE = TRUE) then report "Found: Delimiter3 (List)" severity NOTE; end if;
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
 									ParserStack(StackPointer).Index			:= 0;
@@ -916,7 +957,7 @@ package body JSON is
 							when ' ' | HT =>												next loopj;
 							-- check if allowed
 							when '}' | ']' =>
-								if (VERBOSE = TRUE) then report "Found: Closing" severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Closing" & LF); end if;
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
 									StackPointer												:= StackPointer - 2;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
@@ -927,12 +968,12 @@ package body JSON is
 							-- check if allowed
 							when ',' =>
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
-									if (VERBOSE = TRUE) then report "Found: Delimiter2 (Obj)" severity NOTE; end if;
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER2;
 									ParserStack(StackPointer).Index			:= 0;
 								else
-									if (VERBOSE = TRUE) then report "Found: Delimiter3 (List)" severity NOTE; end if;
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
 									ParserStack(StackPointer).Index			:= 0;
@@ -947,7 +988,7 @@ package body JSON is
 							when ' ' | HT =>												next loopj;
 							-- check if allowed
 							when '}' | ']' =>
-								if (VERBOSE = TRUE) then report "Found: Closing" severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Closing" & LF); end if;
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
 									StackPointer												:= StackPointer - 2;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
@@ -958,12 +999,12 @@ package body JSON is
 							-- check if allowed
 							when ',' =>
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
-									if (VERBOSE = TRUE) then report "Found: Delimiter2 (Obj)" severity NOTE; end if;
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER2;
 									ParserStack(StackPointer).Index			:= 0;
 								else
-									if (VERBOSE = TRUE) then report "Found: Delimiter3 (List)" severity NOTE; end if;
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
 									ParserStack(StackPointer).Index			:= 0;
@@ -978,7 +1019,7 @@ package body JSON is
 							when ' ' | HT =>												next loopj;
 							-- check if allowed
 							when '}' | ']' =>
-								if (VERBOSE = TRUE) then report "Found: Closing" severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Closing" & LF); end if;
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
 									StackPointer												:= StackPointer - 2;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
@@ -989,12 +1030,12 @@ package body JSON is
 							-- check if allowed
 							when ',' =>
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
-									if (VERBOSE = TRUE) then report "Found: Delimiter2 (Obj)" severity NOTE; end if;
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER2;
 									ParserStack(StackPointer).Index			:= 0;
 								else
-									if (VERBOSE = TRUE) then report "Found: Delimiter3 (List)" severity NOTE; end if;
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
 									ParserStack(StackPointer).Index			:= 0;
@@ -1009,7 +1050,7 @@ package body JSON is
 							when ' ' | HT =>												next loopj;
 							-- check if allowed
 							when '}' | ']' =>
-								if (VERBOSE = TRUE) then report "Found: Closing" severity NOTE; end if;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Closing" & LF); end if;
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
 									StackPointer												:= StackPointer - 2;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
@@ -1020,12 +1061,12 @@ package body JSON is
 							-- check if allowed
 							when ',' =>
 								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
-									if (VERBOSE = TRUE) then report "Found: Delimiter2 (Obj)" severity NOTE; end if;
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER2;
 									ParserStack(StackPointer).Index			:= 0;
 								else
-									if (VERBOSE = TRUE) then report "Found: Delimiter3 (List)" severity NOTE; end if;
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
 									StackPointer												:= StackPointer + 1;
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
 									ParserStack(StackPointer).Index			:= 0;
@@ -1037,14 +1078,25 @@ package body JSON is
 					
 				end case;
 				
-				if (VERBOSE = TRUE) then 
-					printParserStack(ParserStack(0 to StackPointer));
-					printIndex(Result.Index(0 to IndexWriter), Result.Content(1 to ContentWriter));
+				if (VERBOSE = TRUE) then
+					printParserStack(ParserStack(0 to StackPointer), StringBuffer, StringWriter);
+					jsonReportIndex(Result.Index(0 to IndexWriter), Result.Content(1 to ContentWriter), StringBuffer, StringWriter);
+					report StringBuffer(1 to StringWriter - 1) severity NOTE; 
+--					printParserStack(ParserStack(0 to StackPointer));
+--					jsonReportIndex(Result.Index(0 to IndexWriter), Result.Content(1 to ContentWriter));
 				end if;
 			end loop;
 		end loop;
+
+		Result.IndexCount		:= IndexWriter + 1;
+		Result.ContentCount	:= ContentWriter;		
+		
 		-- print complete index after parsing all input characters
-		if (VERBOSE = TRUE) then printIndex(Result.Index(0 to IndexWriter), Result.Content(1 to ContentWriter));	end if;
+		if (VERBOSE = TRUE) then
+			jsonStringClear(StringBuffer, StringWriter);
+			jsonReportIndex(Result.Index(0 to Result.IndexCount - 1), Result.Content(1 to Result.ContentCount), StringBuffer, StringWriter);
+			report StringBuffer(1 to StringWriter - 1) severity NOTE; 
+		end if;
 		
 		file_close(FileHandle);
 
@@ -1169,7 +1221,7 @@ package body JSON is
 				if (IndexElement.ElementType = ELEM_KEY) then
 					loopj : for j in 0 to 127 loop
 						if (VERBOSE = TRUE) then report "jsonGetElementIndex: Compare keys - Path='" & Path(JSON_PATH(i).StringStart to JSON_PATH(i).StringEnd) & "'  Key='" & JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd) & "'" severity NOTE; end if;
-						if (str_match(Path(JSON_PATH(i).StringStart to JSON_PATH(i).StringEnd), JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd)) = TRUE) then
+						if (jsonStringmatch(Path(JSON_PATH(i).StringStart to JSON_PATH(i).StringEnd), JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd)) = TRUE) then
 							if (VERBOSE = TRUE) then report "jsonGetElementIndex: -> matched - Get Child: Index=" & INTEGER'image(IndexElement.ChildIndex) severity NOTE; end if;
 							-- Go one level down
 							if (IndexElement.ChildIndex = 0) then		-- no child
@@ -1199,7 +1251,7 @@ package body JSON is
 								IndexElement			:= JSONContext.Index(IndexElement.ChildIndex);
 							end if;
 							next loopi;
-						else		-- str_match
+						else		-- jsonStringmatch
 							if (VERBOSE = TRUE) then report "jsonGetElementIndex: -> no match - Get Next: Index=" & INTEGER'image(IndexElement.NextIndex) severity NOTE; end if;
 							if (IndexElement.NextIndex = 0) then
 								report "jsonGetElementIndex: No more keys to compare." severity FAILURE;
@@ -1208,7 +1260,7 @@ package body JSON is
 								IndexElement				:= JSONContext.Index(IndexElement.NextIndex);
 								next loopj;
 							end if;	-- IndexElement.NextIndex
-						end if;	-- str_match
+						end if;	-- jsonStringmatch
 					end loop;	-- loopj
 				else		-- IndexElement.ElementType /= ELEM_KEY
 					report "jsonGetElementIndex: IndexElement is not a key." severity FAILURE;
