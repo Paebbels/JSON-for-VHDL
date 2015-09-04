@@ -331,7 +331,7 @@ package body JSON is
 		loopi : for i in 0 to Result.Index'high loop
 			exit when endfile(FileHandle);
 			readline(FileHandle, CurrentLine);
-			loopj : for j in 0 to CurrentLine'right loop
+			loopj : for j in 1 to CurrentLine'high loop
 				read(CurrentLine, CurrentChar, IsString);
 				next loopi when (IsString = FALSE);
 			
