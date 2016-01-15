@@ -16,7 +16,7 @@ end entity;
 
 architecture rtl of Boards2 is
 	-- define a json file and parse its content
-	constant ConfigFile		: STRING		:= C_PROJECT_DIR & "\Data\Boards.json";
+	constant ConfigFile		: STRING		:= C_PROJECT_DIR & "\Data\Boards2.json";
 	constant JSONContent	: T_JSON		:= jsonLoadFile(ConfigFile);
 	
 	procedure assertMessage(cond : BOOLEAN; msg : STRING) is
@@ -66,7 +66,7 @@ begin
 	printMessage(transform);
 	
 	-- select different values from data structure
---	printMessage("jsonGetString(..., 'KC705/FPGA'):                             " & jsonGetString(JSONContent, "KC705/FPGA"));
+	printMessage("jsonGetString(..., 'KC705/FPGADevice'):                       " & jsonGetString(JSONContent, "KC705/FPGADevice"));
 	printMessage("jsonGetString(..., 'KC705/IIC/0/Devices/1/Type'):             " & jsonGetString(JSONContent, "KC705/IIC/0/Devices/1/Type"));
 	printMessage("jsonGetString(..., 'DE4/Ethernet/2/PHY_ManagementInterface'): " & jsonGetString(JSONContent, "DE4/Ethernet/2/PHY_ManagementInterface"));
 	

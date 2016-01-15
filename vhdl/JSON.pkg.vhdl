@@ -20,7 +20,7 @@
 --
 -- License:
 -- ============================================================================
--- Copyright 2007-2015 Patrick Lehmann - Dresden, Germany
+-- Copyright 2007-2016 Patrick Lehmann - Dresden, Germany
 -- 
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -253,9 +253,9 @@ package body JSON is
 --		variable StringWriter		: T_UINT16;
 	begin
 --		jsonStringClear(StringBuffer, StringWriter);
-		jsonStringappend(StringBuffer, StringWriter, LF & "Index: depth=" & INTEGER'image(Index'length) & LF);
+		jsonStringAppend(StringBuffer, StringWriter, LF & "Index: depth=" & INTEGER'image(Index'length) & LF);
 		for i in Index'range loop
-			jsonStringappend(StringBuffer, StringWriter, INTEGER'image(i) &
+			jsonStringAppend(StringBuffer, StringWriter, INTEGER'image(i) &
 					": index=" & INTEGER'image(Index(i).Index) &
 					"  child=" & INTEGER'image(Index(i).ChildIndex) &
 					"  next=" & INTEGER'image(Index(i).NextIndex) &
@@ -302,9 +302,9 @@ package body JSON is
 --		variable StringWriter		: T_UINT16;
 		begin
 --			jsonStringClear(StringBuffer, StringWriter);
-			jsonStringappend(StringBuffer, StringWriter, "ParserStack: depth=" & INTEGER'image(ParserStack'length) & LF);
+			jsonStringAppend(StringBuffer, StringWriter, "ParserStack: depth=" & INTEGER'image(ParserStack'length) & LF);
 			for i in ParserStack'range loop
-				jsonStringappend(StringBuffer, StringWriter, "        " & INTEGER'image(i) & ": state=" & T_PARSER_STATE'image(ParserStack(i).State) & "  index=" & INTEGER'image(ParserStack(i).Index) & LF);
+				jsonStringAppend(StringBuffer, StringWriter, "        " & INTEGER'image(i) & ": state=" & T_PARSER_STATE'image(ParserStack(i).State) & "  index=" & INTEGER'image(ParserStack(i).Index) & LF);
 			end loop;
 --			report StringBuffer(1 to StringWriter - 1) severity NOTE;
 		end procedure;
@@ -1192,7 +1192,7 @@ package body JSON is
 	end function;
 
 	function jsonGetElementIndex(JSONContext : T_JSON; Path : STRING) return T_UINT16 is
-		constant VERBOSE			: BOOLEAN								:= C_JSON_VERBOSE or FALSE;
+		constant VERBOSE			: BOOLEAN								:= C_JSON_VERBOSE or TRUE;
 		constant JSON_PATH		: T_JSON_PATH						:= jsonParsePath(Path);
 		variable IndexElement	: T_JSON_INDEX_ELEMENT;
 		variable Index				: NATURAL;
@@ -1230,7 +1230,7 @@ package body JSON is
 						end if;
 					end if;	-- IndexElement.ChildIndex
 				end if;	-- Index = 0
-				for i in 1 to Index loop
+				for j in 1 to Index loop
 					if (IndexElement.NextIndex = 0) then
 						report "jsonGetElementIndex: Reached last element in chain." severity FAILURE;
 						return 0;
@@ -1307,14 +1307,16 @@ package body JSON is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
 		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
 	begin
---		report "jsonGetString: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;
+		if (C_JSON_VERBOSE) then		report "jsonGetString: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;	end if;
 		if (ElementIndex /= 0) then
 			case Element.ElementType is
 				when ELEM_NULL =>									return "NULL";
 				when ELEM_TRUE =>									return "TRUE";
 				when ELEM_FALSE =>								return "FALSE";
 				when ELEM_STRING | ELEM_NUMBER => return JSONContext.Content(Element.StringStart to Element.StringEnd);
-				when others =>										null;
+				when ELEM_LIST =>									return "ERROR: list";
+				when ELEM_OBJECT =>								return "ERROR: obj";
+				when ELEM_KEY =>									return "ERROR: key";
 			end case;
 		end if;
 		return "ERROR";
@@ -1324,6 +1326,7 @@ package body JSON is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
 		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
 	begin
+		if (C_JSON_VERBOSE) then		report "jsonGetBoolean: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;	end if;
 		if (ElementIndex = 0) then return FALSE; end if;
 		return (Element.ElementType = ELEM_TRUE);
 	end function;
@@ -1332,6 +1335,7 @@ package body JSON is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
 		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
 	begin
+		if (C_JSON_VERBOSE) then		report "jsonIsBoolean: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;	end if;
 		if (ElementIndex = 0) then return FALSE; end if;
 		return (Element.ElementType = ELEM_TRUE) or (Element.ElementType = ELEM_FALSE);
 	end function;
@@ -1340,6 +1344,7 @@ package body JSON is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
 		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
 	begin
+		if (C_JSON_VERBOSE) then		report "jsonIsNull: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;	end if;
 		if (ElementIndex = 0) then return FALSE; end if;
 		return (Element.ElementType = ELEM_NULL);
 	end function;
@@ -1348,6 +1353,7 @@ package body JSON is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
 		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
 	begin
+		if (C_JSON_VERBOSE) then		report "jsonIsString: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;	end if;
 		if (ElementIndex = 0) then return FALSE; end if;
 		return (Element.ElementType = ELEM_STRING);
 	end function;
@@ -1356,6 +1362,7 @@ package body JSON is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
 		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
 	begin
+		if (C_JSON_VERBOSE) then		report "jsonIsNumber: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;	end if;
 		if (ElementIndex = 0) then return FALSE; end if;
 		return (Element.ElementType = ELEM_NUMBER);
 	end function;
