@@ -2,7 +2,9 @@ library	IEEE;
 use			IEEE.STD_LOGIC_1164.ALL;
 use			IEEE.NUMERIC_STD.ALL;
 
+use			work.config.all;
 use			work.json.all;
+
 
 entity Boards is
 	Port (
@@ -15,7 +17,7 @@ end entity;
 
 architecture rtl of Boards is
 	-- define a json file and parse its content
-	constant ConfigFile		: STRING		:= "..\Data\Boards.json";
+	constant ConfigFile		: STRING		:= C_PROJECT_DIR & "\Data\Boards.json";
 	constant JSONContent	: T_JSON		:= jsonLoadFile(ConfigFile);
 	
 	-- dummy signal so the entity is not empty for synthesis
