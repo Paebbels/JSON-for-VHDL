@@ -98,6 +98,7 @@ package JSON is
 	procedure jsonReportIndex(Index : T_JSON_INDEX; Content : STRING; StringBuffer : inout STRING; StringWriter : inout NATURAL);
 	
 	function jsonGetBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
+	function jsonGetInteger(JSONContext : T_JSON; Path : STRING) return INTEGER;
 	function jsonGetString(JSONContext : T_JSON; Path : STRING) return STRING;
 	
 	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
@@ -1302,6 +1303,27 @@ package body JSON is
 		
 		return IndexElement.Index;
 	end function;
+	
+	function jsonGetBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
+		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
+		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
+	begin
+		if (C_JSON_VERBOSE) then		report "jsonGetBoolean: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;	end if;
+		if (ElementIndex = 0) then return FALSE; end if;
+		return (Element.ElementType = ELEM_TRUE);
+	end function;
+	
+	function jsonGetInteger(JSONContext : T_JSON; Path : STRING) return INTEGER is
+		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
+		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
+	begin
+		if (C_JSON_VERBOSE) then        report "jsonGetNumber: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;    end if;
+		if (ElementIndex = 0) then										return INTEGER'low; end if;
+		if (Element.ElementType /= ELEM_NUMBER) then	return INTEGER'low; end if;
+--		Not supported by Vivado 2015.4
+--		return INTEGER'value(JSONContext.Content(Element.StringStart to Element.StringEnd));
+		return to_natural_dec(JSONContext.Content(Element.StringStart to Element.StringEnd));
+	end function;
 
 	function jsonGetString(JSONContext : T_JSON; Path : STRING) return STRING is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
@@ -1320,15 +1342,6 @@ package body JSON is
 			end case;
 		end if;
 		return "ERROR";
-	end function;
-	
-	function jsonGetBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
-		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
-		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
-	begin
-		if (C_JSON_VERBOSE) then		report "jsonGetBoolean: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;	end if;
-		if (ElementIndex = 0) then return FALSE; end if;
-		return (Element.ElementType = ELEM_TRUE);
 	end function;
 	
 	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN is

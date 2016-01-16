@@ -4,6 +4,7 @@ rem create a new VHDL library called json
 vlib.exe json
 
 rem compile VHDL sources into that library
+vcom.exe -rangecheck -l vcom.log -93 -work json ..\Examples\config.pkg.vhdl
 vcom.exe -rangecheck -l vcom.log -93 -work json ..\vhdl\JSON.pkg.vhdl
 vcom.exe -rangecheck -l vcom.log -93 -work json ..\Examples\Boards2.vhdl
 

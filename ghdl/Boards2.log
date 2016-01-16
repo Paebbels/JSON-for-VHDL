@@ -1,4 +1,4 @@
-..\Examples\Boards2.vhdl:28:16:@0ms:(report note): 
+..\Examples\Boards2.vhdl:29:16:@0ms:(report note): 
 Index: depth=319
 0: index=0  child=1  next=0  start=0  end=0  type=elem_object
 1: index=1  child=2  next=9  start=1  end=7  type=elem_key
@@ -319,5 +319,106 @@ Index: depth=319
 316: index=316  child=0  next=0  start=0  end=0  type=elem_null
 317: index=317  child=318  next=0  start=2250  end=2257  type=elem_key
 318: index=318  child=0  next=0  start=0  end=0  type=elem_null
-..\Examples\Boards2.vhdl:28:16:@0ms:(report note): jsonGetString(..., 'KC705/IIC/0/Devices/1/Type'):             Si570
-..\Examples\Boards2.vhdl:28:16:@0ms:(report note): jsonGetString(..., 'DE4/Ethernet/2/PHY_ManagementInterface'): MDIO
+..\vhdl\JSON.pkg.vhdl:1201:41:@0ms:(report note): jsonGetElementIndex: Path='KC705/FPGADevice'  JSON_PATH elements 2
+..\vhdl\JSON.pkg.vhdl:1205:104:@0ms:(report note): jsonGetElementIndex: Resolve root element (OBJ) to first child: Index=1
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='KC705'  Key='S3SK200'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=9
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='KC705'  Key='S3SK1000'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=17
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='KC705'  Key='S3ESK500'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=25
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='KC705'  Key='S3ESK1600'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=33
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='KC705'  Key='ATLYS'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=62
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='KC705'  Key='KC705'
+..\vhdl\JSON.pkg.vhdl:1257:81:@0ms:(report note): jsonGetElementIndex: -> matched - Get Child: Index=63
+..\vhdl\JSON.pkg.vhdl:1277:144:@0ms:(report note): jsonGetElementIndex: Resolve element (OBJ) to first child: Index=64
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='FPGADevice'  Key='FPGADevice'
+..\vhdl\JSON.pkg.vhdl:1257:81:@0ms:(report note): jsonGetElementIndex: -> matched - Get Child: Index=65
+..\Examples\Boards2.vhdl:29:16:@0ms:(report note): jsonGetString(..., 'KC705/FPGADevice'):                       XC7K325T-2FFG900C
+..\vhdl\JSON.pkg.vhdl:1201:41:@0ms:(report note): jsonGetElementIndex: Path='KC705/IIC/0/Devices/1/Type'  JSON_PATH elements 6
+..\vhdl\JSON.pkg.vhdl:1205:104:@0ms:(report note): jsonGetElementIndex: Resolve root element (OBJ) to first child: Index=1
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='KC705'  Key='S3SK200'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=9
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='KC705'  Key='S3SK1000'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=17
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='KC705'  Key='S3ESK500'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=25
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='KC705'  Key='S3ESK1600'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=33
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='KC705'  Key='ATLYS'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=62
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='KC705'  Key='KC705'
+..\vhdl\JSON.pkg.vhdl:1257:81:@0ms:(report note): jsonGetElementIndex: -> matched - Get Child: Index=63
+..\vhdl\JSON.pkg.vhdl:1277:144:@0ms:(report note): jsonGetElementIndex: Resolve element (OBJ) to first child: Index=64
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='IIC'  Key='FPGADevice'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=66
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='IIC'  Key='UART'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=76
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='IIC'  Key='Ethernet'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=91
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='IIC'  Key='IIC'
+..\vhdl\JSON.pkg.vhdl:1257:81:@0ms:(report note): jsonGetElementIndex: -> matched - Get Child: Index=92
+..\vhdl\JSON.pkg.vhdl:1281:144:@0ms:(report note): jsonGetElementIndex: Resolve element (LIST) to first child: Index=93
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='Devices'  Key='Type'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=96
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='Devices'  Key='Address'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=98
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='Devices'  Key='Devices'
+..\vhdl\JSON.pkg.vhdl:1257:81:@0ms:(report note): jsonGetElementIndex: -> matched - Get Child: Index=99
+..\vhdl\JSON.pkg.vhdl:1281:144:@0ms:(report note): jsonGetElementIndex: Resolve element (LIST) to first child: Index=100
+..\vhdl\JSON.pkg.vhdl:1243:120:@0ms:(report note): jsonGetElementIndex: Resolve element (OBJ) to first child: Index=106
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='Type'  Key='Type'
+..\vhdl\JSON.pkg.vhdl:1257:81:@0ms:(report note): jsonGetElementIndex: -> matched - Get Child: Index=107
+..\Examples\Boards2.vhdl:29:16:@0ms:(report note): jsonGetString(..., 'KC705/IIC/0/Devices/1/Type'):             Si570
+..\vhdl\JSON.pkg.vhdl:1201:41:@0ms:(report note): jsonGetElementIndex: Path='DE4/Ethernet/2/PHY_ManagementInterface'  JSON_PATH elements 4
+..\vhdl\JSON.pkg.vhdl:1205:104:@0ms:(report note): jsonGetElementIndex: Resolve root element (OBJ) to first child: Index=1
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='DE4'  Key='S3SK200'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=9
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='DE4'  Key='S3SK1000'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=17
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='DE4'  Key='S3ESK500'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=25
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='DE4'  Key='S3ESK1600'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=33
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='DE4'  Key='ATLYS'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=62
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='DE4'  Key='KC705'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=110
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='DE4'  Key='ML505'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=139
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='DE4'  Key='ML605'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=168
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='DE4'  Key='VC707'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=211
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='DE4'  Key='ZEDBOARD'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=219
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='DE4'  Key='DE0'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=227
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='DE4'  Key='S2GXAV'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=235
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='DE4'  Key='DE4'
+..\vhdl\JSON.pkg.vhdl:1257:81:@0ms:(report note): jsonGetElementIndex: -> matched - Get Child: Index=236
+..\vhdl\JSON.pkg.vhdl:1277:144:@0ms:(report note): jsonGetElementIndex: Resolve element (OBJ) to first child: Index=237
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='Ethernet'  Key='FPGADevice'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=239
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='Ethernet'  Key='UART'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=249
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='Ethernet'  Key='Ethernet'
+..\vhdl\JSON.pkg.vhdl:1257:81:@0ms:(report note): jsonGetElementIndex: -> matched - Get Child: Index=250
+..\vhdl\JSON.pkg.vhdl:1281:144:@0ms:(report note): jsonGetElementIndex: Resolve element (LIST) to first child: Index=251
+..\vhdl\JSON.pkg.vhdl:1243:120:@0ms:(report note): jsonGetElementIndex: Resolve element (OBJ) to first child: Index=278
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='PHY_ManagementInterface'  Key='IPStyle'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=280
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='PHY_ManagementInterface'  Key='RS_DataInterface'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=282
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='PHY_ManagementInterface'  Key='PHY_Device'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=284
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='PHY_ManagementInterface'  Key='PHY_DeviceAddress'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=286
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='PHY_ManagementInterface'  Key='PHY_DataInterface'
+..\vhdl\JSON.pkg.vhdl:1287:81:@0ms:(report note): jsonGetElementIndex: -> no match - Get Next: Index=288
+..\vhdl\JSON.pkg.vhdl:1255:73:@0ms:(report note): jsonGetElementIndex: Compare keys - Path='PHY_ManagementInterface'  Key='PHY_ManagementInterface'
+..\vhdl\JSON.pkg.vhdl:1257:81:@0ms:(report note): jsonGetElementIndex: -> matched - Get Child: Index=289
+..\Examples\Boards2.vhdl:29:16:@0ms:(report note): jsonGetString(..., 'DE4/Ethernet/2/PHY_ManagementInterface'): MDIO

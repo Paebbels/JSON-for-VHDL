@@ -17,7 +17,7 @@ end entity;
 
 architecture rtl of Boards is
 	-- define a json file and parse its content
-	constant ConfigFile		: STRING		:= C_PROJECT_DIR & "\Data\Boards.json";
+	constant ConfigFile		: STRING		:= C_PROJECT_DIR & "\Data\Boards0.json";
 	constant JSONContent	: T_JSON		:= jsonLoadFile(ConfigFile);
 	
 	procedure assertMessage(cond : BOOLEAN; msg : STRING) is
@@ -64,7 +64,7 @@ begin
 
 	-- ===========================================================================
 	-- for ISE, because wait; is not supported in synthesis
-	printMessage(transform);
+--	printMessage(transform);
 	
 	-- select a value from the data structure
 	printMessage("jsonGetString(..., 'ML505/Eth/0/Device'):                       " & jsonGetString(JSONContent, "ML505/Eth/0/Device"));

@@ -1,9 +1,10 @@
 @echo off
 
 rem configure the path to GHDL here
-set GHDL=C:\Tools\GHDL\0.33dev\bin\ghdl.exe
+set GHDL=C:\Tools\GHDL\0.34dev\bin\ghdl.exe
 
 rem analyze VHDL files
+%GHDL% -a ..\Examples\config.pkg.vhdl
 %GHDL% -a ..\vhdl\JSON.pkg.vhdl
 %GHDL% -a ..\Examples\Boards2.vhdl
 
