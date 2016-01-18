@@ -70,6 +70,12 @@ begin
 	printMessage("jsonGetString(..., 'KC705/IIC/0/Devices/1/Type'):             " & jsonGetString(JSONContent, "KC705/IIC/0/Devices/1/Type"));
 	printMessage("jsonGetString(..., 'DE4/Ethernet/2/PHY_ManagementInterface'): " & jsonGetString(JSONContent, "DE4/Ethernet/2/PHY_ManagementInterface"));
 	
+	-- printMessage("jsonGetString(..., 'DE4/Ethernet/2/PHY_ManagementInterface'): " & jsonGetString(JSONContent, "Boards/ML505/UART/Device"));
+	-- printMessage("jsonGetString(..., 'DE4/Ethernet/2/PHY_ManagementInterface'): " & jsonGetString(JSONContent, "Boards/ML505/PHY"));
+	-- printMessage("jsonGetString(..., 'DE4/Ethernet/2/PHY_ManagementInterface'): " & jsonGetString(JSONContent, "Boards/ML505/Eth/0/Device"));
+	-- printMessage("jsonGetString(..., 'DE4/Ethernet/2/PHY_ManagementInterface'): " & jsonGetString(JSONContent, "Boards/KC705/Eth/1/Vendor"));
+	-- printMessage("jsonGetString(..., 'DE4/Ethernet/2/PHY_ManagementInterface'): " & jsonGetString(JSONContent, "Boards/KC705/Eth/3/IIC/0/Devices/0/Name"));
+	
 	-- do something important
 	Toggle	<= not Toggle when rising_edge(Clock);
 	LED			<= (others => Toggle);

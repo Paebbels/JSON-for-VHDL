@@ -49,7 +49,7 @@ package JSON is
 	subtype T_UINT16 is NATURAL range 0 to 2**16-1;
 	type T_NATVEC is array(NATURAL range <>) of NATURAL;
 
-	type T_ELEMENT_TYPE is (ELEM_KEY, ELEM_OBJECT, ELEM_LIST, ELEM_STRING, ELEM_NUMBER, ELEM_NULL, ELEM_TRUE, ELEM_FALSE);
+	type T_ELEMENT_TYPE is (ELEM_KEY, ELEM_OBJECT, ELEM_LIST, ELEM_STRING, ELEM_LINK, ELEM_NUMBER, ELEM_NULL, ELEM_TRUE, ELEM_FALSE);
 
 	type T_JSON_INDEX_ELEMENT	is record
 		Index				: T_UINT16;
@@ -98,7 +98,6 @@ package JSON is
 	procedure jsonReportIndex(Index : T_JSON_INDEX; Content : STRING; StringBuffer : inout STRING; StringWriter : inout NATURAL);
 	
 	function jsonGetBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
-	function jsonGetInteger(JSONContext : T_JSON; Path : STRING) return INTEGER;
 	function jsonGetString(JSONContext : T_JSON; Path : STRING) return STRING;
 	
 	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
@@ -254,9 +253,9 @@ package body JSON is
 --		variable StringWriter		: T_UINT16;
 	begin
 --		jsonStringClear(StringBuffer, StringWriter);
-		jsonStringAppend(StringBuffer, StringWriter, LF & "Index: depth=" & INTEGER'image(Index'length) & LF);
+		jsonStringappend(StringBuffer, StringWriter, LF & "Index: depth=" & INTEGER'image(Index'length) & LF);
 		for i in Index'range loop
-			jsonStringAppend(StringBuffer, StringWriter, INTEGER'image(i) &
+			jsonStringappend(StringBuffer, StringWriter, INTEGER'image(i) &
 					": index=" & INTEGER'image(Index(i).Index) &
 					"  child=" & INTEGER'image(Index(i).ChildIndex) &
 					"  next=" & INTEGER'image(Index(i).NextIndex) &
@@ -287,6 +286,7 @@ package body JSON is
 				ST_KEY, ST_KEY_END,
 				ST_DELIMITER1, ST_DELIMITER2, ST_DELIMITER3,
 				ST_STRING,	ST_STRING_END,
+				ST_LINK,		ST_LINK_END,
 				ST_NUMBER,	ST_NUMBER_END,
 				ST_NULL_END, ST_TRUE_END, ST_FALSE_END,
 			ST_CLOSED
@@ -298,14 +298,19 @@ package body JSON is
 		
 		type T_PARSER_STACK		is array(NATURAL range <>) of T_PARSER_STACK_ELEMENT;
 
+		function printPos(Row : T_UINT16; Column : T_UINT16) return STRING is
+		begin
+			return "Row:" & INTEGER'image(Row) & ", Col:" & INTEGER'image(Column);
+		end function;
+		
 		procedure printParserStack(ParserStack : T_PARSER_STACK; StringBuffer : inout STRING; StringWriter : inout NATURAL) is
 --		variable StringBuffer		: STRING(1 to 2**15);
 --		variable StringWriter		: T_UINT16;
 		begin
 --			jsonStringClear(StringBuffer, StringWriter);
-			jsonStringAppend(StringBuffer, StringWriter, "ParserStack: depth=" & INTEGER'image(ParserStack'length) & LF);
+			jsonStringappend(StringBuffer, StringWriter, "ParserStack: depth=" & INTEGER'image(ParserStack'length) & LF);
 			for i in ParserStack'range loop
-				jsonStringAppend(StringBuffer, StringWriter, "        " & INTEGER'image(i) & ": state=" & T_PARSER_STATE'image(ParserStack(i).State) & "  index=" & INTEGER'image(ParserStack(i).Index) & LF);
+				jsonStringappend(StringBuffer, StringWriter, "        " & INTEGER'image(i) & ": state=" & T_PARSER_STATE'image(ParserStack(i).State) & "  index=" & INTEGER'image(ParserStack(i).Index) & LF);
 			end loop;
 --			report StringBuffer(1 to StringWriter - 1) severity NOTE;
 		end procedure;
@@ -318,6 +323,9 @@ package body JSON is
 		
 		variable StringBuffer		: STRING(1 to 2**12);
 		variable StringWriter		: T_UINT16;
+		
+		variable Debug_Row			: T_UINT16;
+		variable Debug_Column		: T_UINT16;
 	begin
 		jsonStringClear(StringBuffer, StringWriter);
 		
@@ -332,9 +340,13 @@ package body JSON is
 		loopi : for i in 0 to Result.Index'high loop
 			exit when endfile(FileHandle);
 			readline(FileHandle, CurrentLine);
+			Debug_Row			:= Debug_Row + 1;
+			Debug_Column	:= 0;
+			
 			loopj : for j in 1 to CurrentLine'high loop
 				read(CurrentLine, CurrentChar, IsString);
 				next loopi when (IsString = FALSE);
+				Debug_Column	:= Debug_Column	+ 1;
 			
 				jsonStringClear(StringBuffer, StringWriter);
 				if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, Lf &
@@ -365,7 +377,7 @@ package body JSON is
 								ParserStack(StackPointer).State				:= ST_LIST;
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when others =>
-								Result.Error := errorMessage("Parsing Header: Char '" & CurrentChar & "' is not allowed.");
+								Result.Error := errorMessage("Parsing Header(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
 				
@@ -386,7 +398,7 @@ package body JSON is
 								ParserStack(StackPointer).State				:= ST_KEY;
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when others =>
-								Result.Error := errorMessage("Parsing Object: Char '" & CurrentChar & "' is not allowed.");
+								Result.Error := errorMessage("Parsing Object(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
 						
@@ -416,6 +428,30 @@ package body JSON is
 								
 								StackPointer													:= StackPointer + 1;
 								ParserStack(StackPointer).State				:= ST_LIST;
+								ParserStack(StackPointer).Index				:= IndexWriter;
+							when '@' =>
+								-- consume the opening quote
+								read(CurrentLine, CurrentChar, IsString);
+								Debug_Column		:= Debug_Column + 1;
+								if (IsString = FALSE) then
+									Result.Error	:= errorMessage("Parsing Link(" & printPos(Debug_Row, Debug_Column) & "): is not complete.");
+									exit loopi;
+								elsif (CurrentChar /= '"') then		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
+									Result.Error	:= errorMessage("Parsing Link(" & printPos(Debug_Row, Debug_Column) & "): Begin of link has a not allowed CHARACTER.");
+									exit loopi;
+								end if;
+							
+								IndexWriter														:= IndexWriter + 1;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Link - Add new IndexElement(LNK) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) & LF); end if;
+								Result.Index(IndexWriter).Index				:= IndexWriter;
+								Result.Index(IndexWriter).ElementType	:= ELEM_LINK;
+								Result.Index(IndexWriter).StringStart	:= ContentWriter + 1;
+								
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
+								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
+								
+								StackPointer													:= StackPointer + 1;
+								ParserStack(StackPointer).State				:= ST_LINK;
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when '"' =>		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
 								IndexWriter														:= IndexWriter + 1;
@@ -449,11 +485,12 @@ package body JSON is
 							when 'n' | 'N' =>
 								for k in 2 to 4 loop
 									read(CurrentLine, CurrentChar, IsString);
+									Debug_Column		:= Debug_Column + 1;
 									if (IsString = FALSE) then
-										Result.Error := errorMessage("Parsing List: Keyword 'null' is not complete.");
+										Result.Error	:= errorMessage("Parsing List(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'null' is not complete.");
 										exit loopi;
 									elsif (CurrentChar /= C_JSON_NULL(k)) then
-										Result.Error := errorMessage("Parsing List: Keyword 'null' has a not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing List(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'null' has a not allowed CHARACTERs.");
 										exit loopi;
 									end if;
 								end loop;
@@ -473,11 +510,12 @@ package body JSON is
 							when 't' | 'T' =>
 								for k in 2 to 4 loop
 									read(CurrentLine, CurrentChar, IsString);
+									Debug_Column		:= Debug_Column + 1;
 									if (IsString = FALSE) then
-										Result.Error := errorMessage("Parsing Delimiter3: Keyword 'true' is not complete.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'true' is not complete.");
 										exit loopi;
 									elsif (CurrentChar /= C_JSON_TRUE(k)) then
-										Result.Error := errorMessage("Parsing Delimiter3: Keyword 'true' as not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'true' as not allowed CHARACTERs.");
 										exit loopi;
 									end if;
 								end loop;
@@ -497,11 +535,12 @@ package body JSON is
 							when 'f' | 'F' =>
 								for k in 2 to 5 loop
 									read(CurrentLine, CurrentChar, IsString);
+									Debug_Column		:= Debug_Column + 1;
 									if (IsString = FALSE) then
-										Result.Error := errorMessage("Parsing Delimiter3: Keyword 'false' is not complete.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'false' is not complete.");
 										exit loopi;
 									elsif (CurrentChar /= C_JSON_FALSE(k)) then
-										Result.Error := errorMessage("Parsing Delimiter3: Keyword 'false' as not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'false' as not allowed CHARACTERs.");
 										exit loopi;
 									end if;
 								end loop;
@@ -519,7 +558,7 @@ package body JSON is
 								ParserStack(StackPointer).State				:= ST_FALSE_END;
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when others =>
-								Result.Error := errorMessage("Parsing List: Char '" & CurrentChar & "' is not allowed.");
+								Result.Error := errorMessage("Parsing List(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
 						
@@ -541,7 +580,7 @@ package body JSON is
 								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter1 (':')" & LF); end if;
 								ParserStack(StackPointer).State				:= ST_DELIMITER1;
 							when others =>
-								Result.Error := errorMessage("Parsing KeyEnd: Char '" & CurrentChar & "' is not allowed.");
+								Result.Error := errorMessage("Parsing KeyEnd(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
 					
@@ -573,6 +612,30 @@ package body JSON is
 								StackPointer													:= StackPointer + 1;
 								ParserStack(StackPointer).State				:= ST_LIST;
 								ParserStack(StackPointer).Index				:= IndexWriter;
+							when '@' =>
+								-- consume the opening quote
+								read(CurrentLine, CurrentChar, IsString);
+								Debug_Column		:= Debug_Column + 1;
+								if (IsString = FALSE) then
+									Result.Error	:= errorMessage("Parsing Link(" & printPos(Debug_Row, Debug_Column) & "): is not complete.");
+									exit loopi;
+								elsif (CurrentChar /= '"') then		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
+									Result.Error	:= errorMessage("Parsing Link(" & printPos(Debug_Row, Debug_Column) & "): Begin of link has a not allowed CHARACTER.");
+									exit loopi;
+								end if;
+								
+								IndexWriter														:= IndexWriter + 1;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Link - Add new IndexElement(LNK) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) & LF); end if;
+								Result.Index(IndexWriter).Index				:= IndexWriter;
+								Result.Index(IndexWriter).ElementType	:= ELEM_LINK;
+								Result.Index(IndexWriter).StringStart	:= ContentWriter + 1;
+								
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
+								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
+								
+								StackPointer													:= StackPointer + 1;
+								ParserStack(StackPointer).State				:= ST_LINK;
+								ParserStack(StackPointer).Index				:= IndexWriter;
 							when '"' =>		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
 								IndexWriter														:= IndexWriter + 1;
 								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: String - Add new IndexElement(STR) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) & LF); end if;
@@ -605,11 +668,12 @@ package body JSON is
 							when 'n' | 'N' =>
 								for k in 2 to 4 loop
 									read(CurrentLine, CurrentChar, IsString);
+									Debug_Column		:= Debug_Column + 1;
 									if (IsString = FALSE) then
-										Result.Error := errorMessage("Parsing List: Keyword 'null' is not complete.");
+										Result.Error	:= errorMessage("Parsing List(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'null' is not complete.");
 										exit loopi;
 									elsif (CurrentChar /= C_JSON_NULL(k)) then
-										Result.Error := errorMessage("Parsing List: Keyword 'null' has a not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing List(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'null' has a not allowed CHARACTERs.");
 										exit loopi;
 									end if;
 								end loop;
@@ -629,11 +693,12 @@ package body JSON is
 							when 't' | 'T' =>
 								for k in 2 to 4 loop
 									read(CurrentLine, CurrentChar, IsString);
+									Debug_Column		:= Debug_Column + 1;
 									if (IsString = FALSE) then
-										Result.Error := errorMessage("Parsing Delimiter3: Keyword 'true' is not complete.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'true' is not complete.");
 										exit loopi;
 									elsif (CurrentChar /= C_JSON_TRUE(k)) then
-										Result.Error := errorMessage("Parsing Delimiter3: Keyword 'true' as not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'true' as not allowed CHARACTERs.");
 										exit loopi;
 									end if;
 								end loop;
@@ -653,11 +718,12 @@ package body JSON is
 							when 'f' | 'F' =>
 								for k in 2 to 5 loop
 									read(CurrentLine, CurrentChar, IsString);
+									Debug_Column		:= Debug_Column + 1;
 									if (IsString = FALSE) then
-										Result.Error := errorMessage("Parsing Delimiter3: Keyword 'false' is not complete.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'false' is not complete.");
 										exit loopi;
 									elsif (CurrentChar /= C_JSON_FALSE(k)) then
-										Result.Error := errorMessage("Parsing Delimiter3: Keyword 'false' as not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'false' as not allowed CHARACTERs.");
 										exit loopi;
 									end if;
 								end loop;
@@ -675,7 +741,7 @@ package body JSON is
 								ParserStack(StackPointer).State				:= ST_FALSE_END;
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when others =>
-								Result.Error := errorMessage("Parsing Delimiter1: Char '" & CurrentChar & "' is not allowed.");
+								Result.Error := errorMessage("Parsing Delimiter1(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
 					
@@ -699,7 +765,7 @@ package body JSON is
 							when others =>
 								printParserStack(ParserStack(0 to StackPointer), StringBuffer, StringWriter);
 								report StringBuffer(1 to StringWriter - 1) severity NOTE; 
-								Result.Error := errorMessage("Parsing Delimiter2: Char '" & CurrentChar & "' is not allowed.");
+								Result.Error := errorMessage("Parsing Delimiter2(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
 						
@@ -731,6 +797,30 @@ package body JSON is
 								StackPointer													:= StackPointer - 1;
 								ParserStack(StackPointer).State				:= ST_LIST;
 								ParserStack(StackPointer).Index				:= IndexWriter;
+							when '@' =>
+								-- consume the opening quote
+								read(CurrentLine, CurrentChar, IsString);
+								Debug_Column		:= Debug_Column + 1;
+								if (IsString = FALSE) then
+									Result.Error	:= errorMessage("Parsing Link(" & printPos(Debug_Row, Debug_Column) & "): is not complete.");
+									exit loopi;
+								elsif (CurrentChar /= '"') then		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
+									Result.Error	:= errorMessage("Parsing Link(" & printPos(Debug_Row, Debug_Column) & "): Begin of link has a not allowed CHARACTER.");
+									exit loopi;
+								end if;
+								
+								IndexWriter														:= IndexWriter + 1;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Link - Add new IndexElement(LNK) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) & LF); end if;
+								Result.Index(IndexWriter).Index				:= IndexWriter;
+								Result.Index(IndexWriter).ElementType	:= ELEM_LINK;
+								Result.Index(IndexWriter).StringStart	:= ContentWriter + 1;
+								
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer - 1).Index) & " as next." & LF); end if;
+								Result.Index(ParserStack(StackPointer - 1).Index).NextIndex	:= IndexWriter;
+								
+								StackPointer													:= StackPointer - 1;
+								ParserStack(StackPointer).State				:= ST_LINK;
+								ParserStack(StackPointer).Index				:= IndexWriter;
 							when '"' =>		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
 								IndexWriter														:= IndexWriter + 1;
 								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: String - Add new IndexElement(STR) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) & LF); end if;
@@ -763,11 +853,12 @@ package body JSON is
 							when 'n' | 'N' =>
 								for k in 2 to 4 loop
 									read(CurrentLine, CurrentChar, IsString);
+									Debug_Column		:= Debug_Column + 1;
 									if (IsString = FALSE) then
-										Result.Error := errorMessage("Parsing List: Keyword 'null' is not complete.");
+										Result.Error	:= errorMessage("Parsing List(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'null' is not complete.");
 										exit loopi;
 									elsif (CurrentChar /= C_JSON_NULL(k)) then
-										Result.Error := errorMessage("Parsing List: Keyword 'null' has a not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing List(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'null' has a not allowed CHARACTERs.");
 										exit loopi;
 									end if;
 								end loop;
@@ -787,11 +878,12 @@ package body JSON is
 							when 't' | 'T' =>
 								for k in 2 to 4 loop
 									read(CurrentLine, CurrentChar, IsString);
+									Debug_Column		:= Debug_Column + 1;
 									if (IsString = FALSE) then
-										Result.Error := errorMessage("Parsing Delimiter3: Keyword 'true' is not complete.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'true' is not complete.");
 										exit loopi;
 									elsif (CurrentChar /= C_JSON_TRUE(k)) then
-										Result.Error := errorMessage("Parsing Delimiter3: Keyword 'true' as not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'true' as not allowed CHARACTERs.");
 										exit loopi;
 									end if;
 								end loop;
@@ -811,11 +903,12 @@ package body JSON is
 							when 'f' | 'F' =>
 								for k in 2 to 5 loop
 									read(CurrentLine, CurrentChar, IsString);
+									Debug_Column		:= Debug_Column + 1;
 									if (IsString = FALSE) then
-										Result.Error := errorMessage("Parsing Delimiter3: Keyword 'false' is not complete.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'false' is not complete.");
 										exit loopi;
 									elsif (CurrentChar /= C_JSON_FALSE(k)) then
-										Result.Error := errorMessage("Parsing Delimiter3: Keyword 'false' as not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'false' as not allowed CHARACTERs.");
 										exit loopi;
 									end if;
 								end loop;
@@ -833,7 +926,53 @@ package body JSON is
 								ParserStack(StackPointer).State				:= ST_FALSE_END;
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when others =>
-								Result.Error := errorMessage("Parsing Delimiter3: Char '" & CurrentChar & "' is not allowed.");
+								Result.Error := errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
+								exit loopi;
+						end case;
+					
+					when ST_LINK =>
+						case CurrentChar is
+							when '"' =>		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: LinkEnd - Setting End to " & INTEGER'image(ContentWriter) & LF); end if;
+								Result.Index(IndexWriter).StringEnd		:= ContentWriter;
+								ParserStack(StackPointer).State				:= ST_LINK_END;
+							when others =>
+								ContentWriter													:= ContentWriter + 1;
+								Result.Content(ContentWriter)					:= CurrentChar;
+						end case;
+					
+					when ST_LINK_END =>
+						case CurrentChar is
+							when ' ' | HT =>												next loopj;
+							-- check if allowed
+							when '}' | ']' =>
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Closing" & LF); end if;
+								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
+									StackPointer												:= StackPointer - 2;
+									ParserStack(StackPointer).State			:= ST_CLOSED;
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
+									StackPointer												:= StackPointer - 1;
+									ParserStack(StackPointer).State			:= ST_CLOSED;
+								else
+									report "ST_LINK_END" severity FAILURE;
+								end if;
+							-- check if allowed
+							when ',' =>
+								if (ParserStack(StackPointer - 1).State = ST_DELIMITER1) then
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter2 (Obj)" & LF); end if;
+									StackPointer												:= StackPointer + 1;
+									ParserStack(StackPointer).State			:= ST_DELIMITER2;
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								elsif (ParserStack(StackPointer - 1).State = ST_LIST) then
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Delimiter3 (List)" & LF); end if;
+									StackPointer												:= StackPointer + 1;
+									ParserStack(StackPointer).State			:= ST_DELIMITER3;
+									ParserStack(StackPointer).Index			:= IndexWriter;
+								else
+									report "ST_LINK_END" severity FAILURE;
+								end if;
+							when others =>
+								Result.Error := errorMessage("Parsing LinkEnd(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
 					
@@ -861,7 +1000,7 @@ package body JSON is
 									StackPointer												:= StackPointer - 1;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
 								else
-									report "XXX" severity FAILURE;
+									report "(" & printPos(Debug_Row, Debug_Column) & ") ST_STRING_END" severity FAILURE;
 								end if;
 							-- check if allowed
 							when ',' =>
@@ -876,10 +1015,10 @@ package body JSON is
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
 									ParserStack(StackPointer).Index			:= IndexWriter;
 								else
-									report "XXX" severity FAILURE;
+									report "(" & printPos(Debug_Row, Debug_Column) & ") ST_STRING_END" severity FAILURE;
 								end if;
 							when others =>
-								Result.Error := errorMessage("Parsing StringEnd: Char '" & CurrentChar & "' is not allowed.");
+								Result.Error := errorMessage("Parsing StringEnd(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
 					
@@ -912,7 +1051,7 @@ package body JSON is
 									StackPointer												:= StackPointer - 1;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
 								else
-									report "XXX" severity FAILURE;
+									report "(" & printPos(Debug_Row, Debug_Column) & ") ST_NUMBER" severity FAILURE;
 								end if;
 							-- check if allowed
 							when ',' =>
@@ -928,10 +1067,10 @@ package body JSON is
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
 									ParserStack(StackPointer).Index			:= IndexWriter;
 								else
-									report "XXX" severity FAILURE;
+									report "(" & printPos(Debug_Row, Debug_Column) & ") ST_NUMBER" severity FAILURE;
 								end if;
 							when others =>
-								Result.Error := errorMessage("Parsing Number: Char '" & CurrentChar & "' is not allowed.");
+								Result.Error := errorMessage("Parsing Number(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
 
@@ -948,7 +1087,7 @@ package body JSON is
 									StackPointer												:= StackPointer - 1;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
 								else
-									report "XXX" severity FAILURE;
+									report "(" & printPos(Debug_Row, Debug_Column) & ")ST_NUMBER_END" severity FAILURE;
 								end if;
 							-- check if allowed
 							when ',' =>
@@ -963,10 +1102,10 @@ package body JSON is
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
 									ParserStack(StackPointer).Index			:= IndexWriter;
 								else
-									report "XXX" severity FAILURE;
+									report "(" & printPos(Debug_Row, Debug_Column) & ") ST_NUMBER_END" severity FAILURE;
 								end if;
 							when others =>
-								Result.Error := errorMessage("Parsing NumberEnd: Char '" & CurrentChar & "' is not allowed.");
+								Result.Error := errorMessage("Parsing NumberEnd(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
 						
@@ -983,7 +1122,7 @@ package body JSON is
 									StackPointer												:= StackPointer - 1;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
 								else
-									report "XXX" severity FAILURE;
+									report "(" & printPos(Debug_Row, Debug_Column) & ") ST_NULL_END" severity FAILURE;
 								end if;
 							-- check if allowed
 							when ',' =>
@@ -998,10 +1137,10 @@ package body JSON is
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
 									ParserStack(StackPointer).Index			:= IndexWriter;
 								else
-									report "XXX" severity FAILURE;
+									report "(" & printPos(Debug_Row, Debug_Column) & ") ST_NULL_END" severity FAILURE;
 								end if;
 							when others =>
-								Result.Error := errorMessage("Parsing NullEnd: Char '" & CurrentChar & "' is not allowed.");
+								Result.Error := errorMessage("Parsing NullEnd(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
 					
@@ -1018,7 +1157,7 @@ package body JSON is
 									StackPointer												:= StackPointer - 1;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
 								else
-									report "XXX" severity FAILURE;
+									report "(" & printPos(Debug_Row, Debug_Column) & ") ST_TRUE_END" severity FAILURE;
 								end if;
 							-- check if allowed
 							when ',' =>
@@ -1033,10 +1172,10 @@ package body JSON is
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
 									ParserStack(StackPointer).Index			:= IndexWriter;
 								else
-									report "XXX" severity FAILURE;
+									report "(" & printPos(Debug_Row, Debug_Column) & ") ST_TRUE_END" severity FAILURE;
 								end if;
 							when others =>
-								Result.Error := errorMessage("Parsing TrueEnd: Char '" & CurrentChar & "' is not allowed.");
+								Result.Error := errorMessage("Parsing TrueEnd(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
 						
@@ -1053,7 +1192,7 @@ package body JSON is
 									StackPointer												:= StackPointer - 1;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
 								else
-									report "XXX" severity FAILURE;
+									report "(" & printPos(Debug_Row, Debug_Column) & ") ST_FALSE_END" severity FAILURE;
 								end if;
 							-- check if allowed
 							when ',' =>
@@ -1068,10 +1207,10 @@ package body JSON is
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
 									ParserStack(StackPointer).Index			:= IndexWriter;
 								else
-									report "XXX" severity FAILURE;
+									report "(" & printPos(Debug_Row, Debug_Column) & ") ST_FALSE_END" severity FAILURE;
 								end if;
 							when others =>
-								Result.Error := errorMessage("Parsing FalseEnd: Char '" & CurrentChar & "' is not allowed.");
+								Result.Error := errorMessage("Parsing FalseEnd(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
 					
@@ -1088,7 +1227,7 @@ package body JSON is
 									StackPointer												:= StackPointer - 1;
 									ParserStack(StackPointer).State			:= ST_CLOSED;
 								else
-									report "XXX" severity FAILURE;
+									report "(" & printPos(Debug_Row, Debug_Column) & ") ST_CLOSED" severity FAILURE;
 								end if;
 							-- check if allowed
 							when ',' =>
@@ -1103,10 +1242,10 @@ package body JSON is
 									ParserStack(StackPointer).State			:= ST_DELIMITER3;
 									ParserStack(StackPointer).Index			:= IndexWriter;
 								else
-									report "XXX" severity FAILURE;
+									report "(" & printPos(Debug_Row, Debug_Column) & ") ST_CLOSED" severity FAILURE;
 								end if;
 							when others =>
-								Result.Error := errorMessage("Parsing NumberEnd: Char '" & CurrentChar & "' is not allowed.");
+								Result.Error := errorMessage("Parsing Closed(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
 					
@@ -1135,7 +1274,7 @@ package body JSON is
 		if (Result.Error(1) /= C_JSON_NUL) then
 			return Result;
 		elsif ((StackPointer /= 1) or (ParserStack(StackPointer).State /= ST_CLOSED)) then
-			Result.Error := errorMessage("Reached end of file before end of structure.");
+			Result.Error := errorMessage("(" & printPos(Debug_Row, Debug_Column) & ") Reached end of file before end of structure.");
 			return Result;
 		end if;
 				
@@ -1193,7 +1332,7 @@ package body JSON is
 	end function;
 
 	function jsonGetElementIndex(JSONContext : T_JSON; Path : STRING) return T_UINT16 is
-		constant VERBOSE			: BOOLEAN								:= C_JSON_VERBOSE or TRUE;
+		constant VERBOSE			: BOOLEAN								:= C_JSON_VERBOSE or FALSE;
 		constant JSON_PATH		: T_JSON_PATH						:= jsonParsePath(Path);
 		variable IndexElement	: T_JSON_INDEX_ELEMENT;
 		variable Index				: NATURAL;
@@ -1216,6 +1355,13 @@ package body JSON is
 			if (JSON_PATH(i).ElementType = PATH_ELEM_INDEX) then
 				Index		:= to_natural_dec(Path(JSON_PATH(i).StringStart to JSON_PATH(i).StringEnd));
 				if (Index = 0) then
+					if (IndexElement.ElementType = ELEM_LINK) then
+						if (VERBOSE = TRUE) then	report "jsonGetElementIndex0: Resolving link to '" & JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd) & "'." severity NOTE;		end if;
+						IndexElement	:= JSONContext.Index(jsonGetElementIndex(JSONContext, JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd)));
+						if (VERBOSE = TRUE) then	report "jsonGetElementIndex0: Resolved: Index=" & INTEGER'image(IndexElement.Index) severity NOTE;																										end if;
+						next loopi;
+					end if;
+				
 					-- Go one level down
 					if (IndexElement.ChildIndex = 0) then		-- no child
 						if (i /= JSON_PATH'high) then					-- this was not the last path element to compare
@@ -1238,15 +1384,28 @@ package body JSON is
 					end if;
 					IndexElement		:= JSONContext.Index(IndexElement.NextIndex);
 				end loop;
+				
+				if (IndexElement.ElementType = ELEM_LINK) then
+					if (VERBOSE = TRUE) then							report "jsonGetElementIndex1: Resolving link to '" & JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd) & "'." severity NOTE;		end if;
+					IndexElement	:= JSONContext.Index(jsonGetElementIndex(JSONContext, JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd)));
+					if (VERBOSE = TRUE) then							report "jsonGetElementIndex1: Resolved: Index=" & INTEGER'image(IndexElement.Index) severity NOTE;																										end if;
+				end if;
+				
 				-- resolve objects and lists to their first child
 				if (IndexElement.ElementType = ELEM_OBJECT) then
-					if (VERBOSE = TRUE) then							report "jsonGetElementIndex: Resolve element (OBJ) to first child: Index=" & INTEGER'image(IndexElement.ChildIndex)		severity NOTE;							end if;
-					if (IndexElement.ChildIndex = 0) then	report "jsonGetElementIndex: Object has no child."																																		severity FAILURE;	return 0;	end if;
+					if (VERBOSE = TRUE) then							report "jsonGetElementIndex: Resolve element (OBJ) to first child: Index=" & INTEGER'image(IndexElement.ChildIndex)		severity NOTE;								end if;
+					if (IndexElement.ChildIndex = 0) then	report "jsonGetElementIndex: Object has no child."																																		severity FAILURE;	return 0;		end if;
 					IndexElement						:= JSONContext.Index(IndexElement.ChildIndex);
 				elsif (IndexElement.ElementType = ELEM_LIST) then
-					if (VERBOSE = TRUE) then							report "jsonGetElementIndex: Resolve element (LIST) to first child: Index=" & INTEGER'image(IndexElement.ChildIndex)	severity NOTE;							end if;
-					if (IndexElement.ChildIndex = 0) then	report "jsonGetElementIndex: List has no child."																																			severity FAILURE; return 0;	end if;
+					if (VERBOSE = TRUE) then							report "jsonGetElementIndex: Resolve element (LIST) to first child: Index=" & INTEGER'image(IndexElement.ChildIndex)	severity NOTE;								end if;
+					if (IndexElement.ChildIndex = 0) then	report "jsonGetElementIndex: List has no child."																																			severity FAILURE; return 0;		end if;
 					IndexElement						:= JSONContext.Index(IndexElement.ChildIndex);
+				end if;
+				
+				if (IndexElement.ElementType = ELEM_LINK) then
+					if (VERBOSE = TRUE) then							report "jsonGetElementIndex2: Resolving link to '" & JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd) & "'." severity NOTE;		end if;
+					IndexElement	:= JSONContext.Index(jsonGetElementIndex(JSONContext, JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd)));
+					if (VERBOSE = TRUE) then							report "jsonGetElementIndex2: Resolved: Index=" & INTEGER'image(IndexElement.Index) severity NOTE;																										end if;
 				end if;
 			-- -------------------------------
 			elsif (JSON_PATH(i).ElementType = PATH_ELEM_KEY) then
@@ -1272,21 +1431,34 @@ package body JSON is
 									IndexElement		:= JSONContext.Index(IndexElement.ChildIndex);
 								end if;
 							end if;	-- IndexElement.ChildIndex
+							
+							if (IndexElement.ElementType = ELEM_LINK) then
+								if (VERBOSE = TRUE) then							report "jsonGetElementIndex3: Resolving link to '" & JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd) & "'." severity NOTE;	end if;
+								IndexElement	:= JSONContext.Index(jsonGetElementIndex(JSONContext, JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd)));
+								if (VERBOSE = TRUE) then							report "jsonGetElementIndex3: Resolved: Index=" & INTEGER'image(IndexElement.Index) severity NOTE;																									end if;
+							end if;
+
 							-- resolve objects and lists to their first child
 							if (IndexElement.ElementType = ELEM_OBJECT) then
-								if (VERBOSE = TRUE) then							report "jsonGetElementIndex: Resolve element (OBJ) to first child: Index=" & INTEGER'image(IndexElement.ChildIndex)		severity NOTE;							end if;
-								if (IndexElement.ChildIndex = 0) then	report "jsonGetElementIndex: Object has no child."																																		severity FAILURE;	return 0;	end if;
+								if (VERBOSE = TRUE) then							report "jsonGetElementIndex: Resolve element (OBJ) to first child: Index=" & INTEGER'image(IndexElement.ChildIndex)		severity NOTE;								end if;
+								if (IndexElement.ChildIndex = 0) then	report "jsonGetElementIndex: Object has no child."																																		severity FAILURE;	return 0;		end if;
 								IndexElement			:= JSONContext.Index(IndexElement.ChildIndex);
 							elsif (IndexElement.ElementType = ELEM_LIST) then
-								if (VERBOSE = TRUE) then							report "jsonGetElementIndex: Resolve element (LIST) to first child: Index=" & INTEGER'image(IndexElement.ChildIndex)	severity NOTE;							end if;
-								if (IndexElement.ChildIndex = 0) then	report "jsonGetElementIndex: List has no child."																																			severity FAILURE; return 0;	end if;
+								if (VERBOSE = TRUE) then							report "jsonGetElementIndex: Resolve element (LIST) to first child: Index=" & INTEGER'image(IndexElement.ChildIndex)	severity NOTE;								end if;
+								if (IndexElement.ChildIndex = 0) then	report "jsonGetElementIndex: List has no child."																																			severity FAILURE; return 0;		end if;
 								IndexElement			:= JSONContext.Index(IndexElement.ChildIndex);
 							end if;
+							
+							-- if (IndexElement.ElementType = ELEM_LINK) then
+								-- if (VERBOSE = TRUE) then							report "jsonGetElementIndex4: Resolving link to '" & JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd) & "'." severity NOTE;	end if;
+								-- IndexElement	:= JSONContext.Index(jsonGetElementIndex(JSONContext, JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd)));
+								-- if (VERBOSE = TRUE) then							report "jsonGetElementIndex4: Resolved: Index=" & INTEGER'image(IndexElement.Index) severity NOTE;																									end if;
+							-- end if;
 							next loopi;
 						else		-- jsonStringmatch
 							if (VERBOSE = TRUE) then report "jsonGetElementIndex: -> no match - Get Next: Index=" & INTEGER'image(IndexElement.NextIndex) severity NOTE; end if;
 							if (IndexElement.NextIndex = 0) then
-								report "jsonGetElementIndex: No more keys to compare." severity FAILURE;
+								report "jsonGetElementIndex: No more keys to compare for '" & Path(JSON_PATH(i).StringStart to JSON_PATH(i).StringEnd) & "'. Processed path items: " & INTEGER'image(i) severity FAILURE;
 								return 0;
 							else		-- IndexElement.NextIndex
 								IndexElement				:= JSONContext.Index(IndexElement.NextIndex);
@@ -1299,56 +1471,52 @@ package body JSON is
 					return 0;
 				end if;	-- IndexElement.ElementType
 			end if;
+			
+			if (IndexElement.ElementType = ELEM_LINK) then
+				if (VERBOSE = TRUE) then report "jsonGetElementIndex: Resolving link to '" & JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd) & "'." severity NOTE;	end if;
+				IndexElement	:= JSONContext.Index(jsonGetElementIndex(JSONContext, JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd)));
+				if (VERBOSE = TRUE) then							report "jsonGetElementIndex: Resolved: Index=" & INTEGER'image(IndexElement.Index) severity NOTE;																			end if;
+			end if;
 		end loop;
 		
+		if (IndexElement.ElementType = ELEM_LINK) then
+			if (VERBOSE = TRUE) then report "jsonGetElementIndex: Resolving link to '" & JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd) & "'." severity NOTE;		end if;
+			IndexElement	:= JSONContext.Index(jsonGetElementIndex(JSONContext, JSONContext.Content(IndexElement.StringStart to IndexElement.StringEnd)));
+			if (VERBOSE = TRUE) then							report "jsonGetElementIndex: Resolved: Index=" & INTEGER'image(IndexElement.Index) severity NOTE;																				end if;
+		end if;
+		
 		return IndexElement.Index;
-	end function;
-	
-	function jsonGetBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
-		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
-		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
-	begin
-		if (C_JSON_VERBOSE) then		report "jsonGetBoolean: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;	end if;
-		if (ElementIndex = 0) then return FALSE; end if;
-		return (Element.ElementType = ELEM_TRUE);
-	end function;
-	
-	function jsonGetInteger(JSONContext : T_JSON; Path : STRING) return INTEGER is
-		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
-		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
-	begin
-		if (C_JSON_VERBOSE) then        report "jsonGetNumber: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;    end if;
-		if (ElementIndex = 0) then										return INTEGER'low; end if;
-		if (Element.ElementType /= ELEM_NUMBER) then	return INTEGER'low; end if;
---		Not supported by Vivado 2015.4
---		return INTEGER'value(JSONContext.Content(Element.StringStart to Element.StringEnd));
-		return to_natural_dec(JSONContext.Content(Element.StringStart to Element.StringEnd));
 	end function;
 
 	function jsonGetString(JSONContext : T_JSON; Path : STRING) return STRING is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
 		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
 	begin
-		if (C_JSON_VERBOSE) then		report "jsonGetString: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;	end if;
+--		report "jsonGetString: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;
 		if (ElementIndex /= 0) then
 			case Element.ElementType is
 				when ELEM_NULL =>									return "NULL";
 				when ELEM_TRUE =>									return "TRUE";
 				when ELEM_FALSE =>								return "FALSE";
 				when ELEM_STRING | ELEM_NUMBER => return JSONContext.Content(Element.StringStart to Element.StringEnd);
-				when ELEM_LIST =>									return "ERROR: list";
-				when ELEM_OBJECT =>								return "ERROR: obj";
-				when ELEM_KEY =>									return "ERROR: key";
+				when others =>										null;
 			end case;
 		end if;
 		return "ERROR";
+	end function;
+	
+	function jsonGetBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
+		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
+		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
+	begin
+		if (ElementIndex = 0) then return FALSE; end if;
+		return (Element.ElementType = ELEM_TRUE);
 	end function;
 	
 	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
 		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
 	begin
-		if (C_JSON_VERBOSE) then		report "jsonIsBoolean: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;	end if;
 		if (ElementIndex = 0) then return FALSE; end if;
 		return (Element.ElementType = ELEM_TRUE) or (Element.ElementType = ELEM_FALSE);
 	end function;
@@ -1357,7 +1525,6 @@ package body JSON is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
 		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
 	begin
-		if (C_JSON_VERBOSE) then		report "jsonIsNull: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;	end if;
 		if (ElementIndex = 0) then return FALSE; end if;
 		return (Element.ElementType = ELEM_NULL);
 	end function;
@@ -1366,7 +1533,6 @@ package body JSON is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
 		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
 	begin
-		if (C_JSON_VERBOSE) then		report "jsonIsString: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;	end if;
 		if (ElementIndex = 0) then return FALSE; end if;
 		return (Element.ElementType = ELEM_STRING);
 	end function;
@@ -1375,7 +1541,6 @@ package body JSON is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
 		constant Element			: T_JSON_INDEX_ELEMENT	:= JSONContext.Index(ElementIndex);
 	begin
-		if (C_JSON_VERBOSE) then		report "jsonIsNumber: ElementIndex=" & INTEGER'image(ElementIndex) & "  Type=" & T_ELEMENT_TYPE'image(Element.ElementType) severity NOTE;	end if;
 		if (ElementIndex = 0) then return FALSE; end if;
 		return (Element.ElementType = ELEM_NUMBER);
 	end function;

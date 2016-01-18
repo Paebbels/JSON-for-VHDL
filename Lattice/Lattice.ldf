@@ -17,12 +17,12 @@
         </Source>
     </Implementation>
     <Implementation title="impl_2" dir="impl_2" description="impl_2" synthesis="lse" default_strategy="Area">
-        <Options top="Boards2"/>
+        <Options def_top="Boards2" top="Boards2"/>
         <Source name="../vhdl/JSON.pkg.vhdl" type="VHDL" type_short="VHDL">
             <Options lib="work"/>
         </Source>
         <Source name="../Examples/Boards2.vhdl" type="VHDL" type_short="VHDL">
-            <Options lib="work"/>
+            <Options lib="work" top_module="Boards2"/>
         </Source>
         <Source name="../Examples/config.pkg.vhdl" type="VHDL" type_short="VHDL">
             <Options/>
