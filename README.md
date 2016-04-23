@@ -1,6 +1,8 @@
 JSON-for-VHDL
 ================================================================================
 
+[![CLA assistant](https://cla-assistant.io/readme/badge/Paebbels/JSON-for-VHDL)](https://cla-assistant.io/Paebbels/JSON-for-VHDL)
+
 JSON-for-VHDL is a library to parse and query JSON data structures in VHDL. The
 complete functionality is hosted in a single VHDL package, without special
 dependencies.
