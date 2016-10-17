@@ -98,5 +98,3 @@ line instruction:
 
  [31]: https://github.com/Paebbels/JSON-for-VHDL/archive/master.zip
 
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/Paebbels/json-for-vhdl/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
