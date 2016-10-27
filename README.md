@@ -10,8 +10,9 @@ dependencies.
 Table of Content:
 ================================================================================
  1. [Overview](#1-overview)
- 2. [Short Example](#2-short-example)
- 3. [Download](#3-download)
+ 2. [JSON - JavaScript Object Notation](#2-json---javascript-object-notation)
+ 3. [Short Example](#2-short-example)
+ 4. [Download](#3-download)
 
 
 
@@ -26,7 +27,14 @@ done, a lightwight index is created to ease the navigation on the data structure
 
 Values can be selected by simple path expressions.
 
-2 Short Example
+2 JSON - JavaScript Object Notation
+================================================================================
+
+**JavaScript Object Notation (JSON) Data Interchange Format** is specified in
+[RFC 7159](https://tools.ietf.org/html/rfc7159).
+
+
+3 Short Example
 ================================================================================
 
 Here is a short example *.json file, which describes two common FPGA boards. 
@@ -79,7 +87,7 @@ Load a external *.json file, parse the data structure and select a value:
     --    report "JSON: " & JSONContent.Content severity NOTE;
     end architecture;
 
-3 Download
+4 Download
 ================================================================================
 The library can be [downloaded][31] as a zip-file (latest 'master' branch) or
 cloned with `git` from GitHub. GitHub offers HTTPS and SSH as transfer protocols.
