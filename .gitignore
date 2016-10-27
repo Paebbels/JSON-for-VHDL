@@ -1,7 +1,5 @@
 # general file excludes
 ~*.tmp
-~*.docx
-*.fmt
 *~
 ~$*
 
