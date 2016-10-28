@@ -44,7 +44,7 @@ use			IEEE.STD_LOGIC_1164.all;
 
 package JSON is
 	constant C_JSON_VERBOSE		: BOOLEAN		:= FALSE;
-	constant C_JSON_NUL				: CHARACTER	:= '`';
+	constant C_JSON_NUL				: CHARACTER	:= NUL;
 
 	subtype T_UINT16 is NATURAL range 0 to 2**16-1;
 	type T_NATVEC is array(NATURAL range <>) of NATURAL;
@@ -315,7 +315,7 @@ package body JSON is
 --			report StringBuffer(1 to StringWriter - 1) severity NOTE;
 		end procedure;
 
-		constant PARSER_DEPTH		: POSITIVE			:= 128;
+		constant PARSER_DEPTH		: POSITIVE			:= 1023;
 		variable StackPointer		: NATURAL range 0 to PARSER_DEPTH - 1;
 		variable ParserStack		: T_PARSER_STACK(0 to PARSER_DEPTH - 1);
 		variable ContentWriter	: T_UINT16;
@@ -375,6 +375,110 @@ package body JSON is
 								Result.Index(IndexWriter).ElementType	:= ELEM_LIST;
 								StackPointer													:= StackPointer + 1;
 								ParserStack(StackPointer).State				:= ST_LIST;
+								ParserStack(StackPointer).Index				:= IndexWriter;
+							when '"' =>		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
+								IndexWriter														:= IndexWriter + 1;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: String - Add new IndexElement(STR) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter + 1) & LF); end if;
+								Result.Index(IndexWriter).Index				:= IndexWriter;
+								Result.Index(IndexWriter).ElementType	:= ELEM_STRING;
+								Result.Index(IndexWriter).StringStart	:= ContentWriter + 1;
+								
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
+								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
+								
+								StackPointer													:= StackPointer + 1;
+								ParserStack(StackPointer).State				:= ST_STRING;
+								ParserStack(StackPointer).Index				:= IndexWriter;
+							when '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' =>
+								ContentWriter													:= ContentWriter + 1;
+								Result.Content(ContentWriter)					:= CurrentChar;
+								
+								IndexWriter														:= IndexWriter + 1;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Number - Add new IndexElement(NUM) at pos " & INTEGER'image(IndexWriter) & " setting Start to " & INTEGER'image(ContentWriter) & LF); end if;
+								Result.Index(IndexWriter).Index				:= IndexWriter;
+								Result.Index(IndexWriter).ElementType	:= ELEM_NUMBER;
+								Result.Index(IndexWriter).StringStart	:= ContentWriter;
+								
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
+								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
+								
+								StackPointer													:= StackPointer + 1;
+								ParserStack(StackPointer).State				:= ST_NUMBER;
+								ParserStack(StackPointer).Index				:= IndexWriter;
+							when 'n' | 'N' =>
+								for k in 2 to 4 loop
+									read(CurrentLine, CurrentChar, IsString);
+									Debug_Column		:= Debug_Column + 1;
+									if (IsString = FALSE) then
+										Result.Error	:= errorMessage("Parsing List(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'null' is not complete.");
+										exit loopi;
+									elsif (CurrentChar /= C_JSON_NULL(k)) then
+										Result.Error	:= errorMessage("Parsing List(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'null' has a not allowed CHARACTERs.");
+										exit loopi;
+									end if;
+								end loop;
+								IndexWriter														:= IndexWriter + 1;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: NULL - Add new IndexElement(NULL) at pos " & INTEGER'image(IndexWriter) & LF); end if;
+								Result.Index(IndexWriter).Index				:= IndexWriter;
+								Result.Index(IndexWriter).ElementType	:= ELEM_NULL;
+								Result.Index(IndexWriter).StringStart	:= 0;
+								Result.Index(IndexWriter).StringEnd		:= 0;
+								
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
+								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
+								
+								StackPointer													:= StackPointer + 1;
+								ParserStack(StackPointer).State				:= ST_NULL_END;
+								ParserStack(StackPointer).Index				:= IndexWriter;
+							when 't' | 'T' =>
+								for k in 2 to 4 loop
+									read(CurrentLine, CurrentChar, IsString);
+									Debug_Column		:= Debug_Column + 1;
+									if (IsString = FALSE) then
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'true' is not complete.");
+										exit loopi;
+									elsif (CurrentChar /= C_JSON_TRUE(k)) then
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'true' as not allowed CHARACTERs.");
+										exit loopi;
+									end if;
+								end loop;
+								IndexWriter														:= IndexWriter + 1;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: TRUE - Add new IndexElement(TRUE) at pos " & INTEGER'image(IndexWriter) & LF); end if;
+								Result.Index(IndexWriter).Index				:= IndexWriter;
+								Result.Index(IndexWriter).ElementType	:= ELEM_TRUE;
+								Result.Index(IndexWriter).StringStart	:= 0;
+								Result.Index(IndexWriter).StringEnd		:= 0;
+								
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
+								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
+								
+								StackPointer													:= StackPointer + 1;
+								ParserStack(StackPointer).State				:= ST_TRUE_END;
+								ParserStack(StackPointer).Index				:= IndexWriter;
+							when 'f' | 'F' =>
+								for k in 2 to 5 loop
+									read(CurrentLine, CurrentChar, IsString);
+									Debug_Column		:= Debug_Column + 1;
+									if (IsString = FALSE) then
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'false' is not complete.");
+										exit loopi;
+									elsif (CurrentChar /= C_JSON_FALSE(k)) then
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Debug_Row, Debug_Column) & "): Keyword 'false' as not allowed CHARACTERs.");
+										exit loopi;
+									end if;
+								end loop;
+								IndexWriter														:= IndexWriter + 1;
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: FALSE - Add new IndexElement(FALSE) at pos " & INTEGER'image(IndexWriter) & LF); end if;
+								Result.Index(IndexWriter).Index				:= IndexWriter;
+								Result.Index(IndexWriter).ElementType	:= ELEM_FALSE;
+								Result.Index(IndexWriter).StringStart	:= 0;
+								Result.Index(IndexWriter).StringEnd		:= 0;
+								
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Linking new key to index " & INTEGER'image(ParserStack(StackPointer).Index) & " as child." & LF); end if;
+								Result.Index(ParserStack(StackPointer).Index).ChildIndex	:= IndexWriter;
+								
+								StackPointer													:= StackPointer + 1;
+								ParserStack(StackPointer).State				:= ST_FALSE_END;
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when others =>
 								Result.Error := errorMessage("Parsing Header(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
@@ -763,8 +867,8 @@ package body JSON is
 								ParserStack(StackPointer).State				:= ST_KEY;
 								ParserStack(StackPointer).Index				:= IndexWriter;
 							when others =>
-								printParserStack(ParserStack(0 to StackPointer), StringBuffer, StringWriter);
-								report StringBuffer(1 to StringWriter - 1) severity NOTE; 
+								-- printParserStack(ParserStack(0 to StackPointer), StringBuffer, StringWriter);
+								-- report StringBuffer(1 to StringWriter - 1) severity NOTE; 
 								Result.Error := errorMessage("Parsing Delimiter2(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
 						end case;
@@ -1254,7 +1358,7 @@ package body JSON is
 				if (VERBOSE = TRUE) then
 					printParserStack(ParserStack(0 to StackPointer), StringBuffer, StringWriter);
 					jsonReportIndex(Result.Index(0 to IndexWriter), Result.Content(1 to ContentWriter), StringBuffer, StringWriter);
-					report StringBuffer(1 to StringWriter - 1) severity NOTE; 
+					report StringBuffer(1 to StringWriter - 1) severity NOTE;
 				end if;
 			end loop;
 		end loop;
@@ -1266,7 +1370,7 @@ package body JSON is
 		if (VERBOSE = TRUE) then
 			jsonStringClear(StringBuffer, StringWriter);
 			jsonReportIndex(Result.Index(0 to Result.IndexCount - 1), Result.Content(1 to Result.ContentCount), StringBuffer, StringWriter);
-			report StringBuffer(1 to StringWriter - 1) severity NOTE; 
+			report StringBuffer(1 to StringWriter - 1) severity NOTE;
 		end if;
 		
 		file_close(FileHandle);
@@ -1274,8 +1378,17 @@ package body JSON is
 		if (Result.Error(1) /= C_JSON_NUL) then
 			return Result;
 		elsif ((StackPointer /= 1) or (ParserStack(StackPointer).State /= ST_CLOSED)) then
-			Result.Error := errorMessage("(" & printPos(Debug_Row, Debug_Column) & ") Reached end of file before end of structure.");
-			return Result;
+			case ParserStack(StackPointer).State is
+				when ST_FALSE_END | ST_NULL_END | ST_TRUE_END => null;
+				when ST_STRING_END | ST_NUMBER_END => null;
+				when ST_CLOSED => null;
+				when others =>
+					printParserStack(ParserStack(0 to StackPointer), StringBuffer, StringWriter);
+					jsonReportIndex(Result.Index(0 to IndexWriter), Result.Content(1 to ContentWriter), StringBuffer, StringWriter);
+					report StringBuffer(1 to StringWriter - 1) severity NOTE;
+					Result.Error := errorMessage("(" & printPos(Debug_Row, Debug_Column) & ") Reached end of file before end of structure.");
+					return Result;
+			end case;
 		end if;
 				
 		return Result;
