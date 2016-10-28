@@ -501,6 +501,10 @@ package body JSON is
 								StackPointer													:= StackPointer + 1;
 								ParserStack(StackPointer).State				:= ST_KEY;
 								ParserStack(StackPointer).Index				:= IndexWriter;
+							when '}' =>
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Empty object" & LF); end if;
+								StackPointer													:= StackPointer - 1;
+								ParserStack(StackPointer).State				:= ST_CLOSED;
 							when others =>
 								Result.Error := errorMessage("Parsing Object(" & printPos(Debug_Row, Debug_Column) & "): Char '" & CurrentChar & "' is not allowed.");
 								exit loopi;
@@ -533,6 +537,10 @@ package body JSON is
 								StackPointer													:= StackPointer + 1;
 								ParserStack(StackPointer).State				:= ST_LIST;
 								ParserStack(StackPointer).Index				:= IndexWriter;
+							when ']' =>
+								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: Empty list" & LF); end if;
+								StackPointer													:= StackPointer - 1;
+								ParserStack(StackPointer).State				:= ST_CLOSED;
 							when '@' =>
 								-- consume the opening quote
 								read(CurrentLine, CurrentChar, IsString);
@@ -1083,9 +1091,18 @@ package body JSON is
 					when ST_STRING =>
 						case CurrentChar is
 							when '"' =>		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
-								if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: StringEnd - Setting End to " & INTEGER'image(ContentWriter) & LF); end if;
-								Result.Index(IndexWriter).StringEnd		:= ContentWriter;
-								ParserStack(StackPointer).State				:= ST_STRING_END;
+								if (ContentWriter = 0) then
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: StringEnd - Setting End to " & INTEGER'image(ContentWriter) & LF); end if;
+									Result.Index(IndexWriter).StringEnd	:= ContentWriter;
+									ParserStack(StackPointer).State			:= ST_STRING_END;
+								elsif ((ContentWriter > 0) and (Result.Content(ContentWriter) /= '\')) then
+									if (VERBOSE = TRUE) then jsonStringAppend(StringBuffer, StringWriter, "Found: StringEnd - Setting End to " & INTEGER'image(ContentWriter) & LF); end if;
+									Result.Index(IndexWriter).StringEnd	:= ContentWriter;
+									ParserStack(StackPointer).State			:= ST_STRING_END;
+								else
+									ContentWriter												:= ContentWriter + 1;
+									Result.Content(ContentWriter)				:= CurrentChar;
+								end if;
 							when others =>
 								ContentWriter													:= ContentWriter + 1;
 								Result.Content(ContentWriter)					:= CurrentChar;
@@ -1138,7 +1155,7 @@ package body JSON is
 							when '.' =>
 								ContentWriter													:= ContentWriter + 1;
 								Result.Content(ContentWriter)					:= CurrentChar;
-							when '-' =>
+							when '-' | '+' =>
 								ContentWriter													:= ContentWriter + 1;
 								Result.Content(ContentWriter)					:= CurrentChar;
 							when 'e' | 'E' =>
@@ -1380,7 +1397,7 @@ package body JSON is
 		elsif ((StackPointer /= 1) or (ParserStack(StackPointer).State /= ST_CLOSED)) then
 			case ParserStack(StackPointer).State is
 				when ST_FALSE_END | ST_NULL_END | ST_TRUE_END => null;
-				when ST_STRING_END | ST_NUMBER_END => null;
+				when ST_STRING_END | ST_NUMBER | ST_NUMBER_END => null;
 				when ST_CLOSED => null;
 				when others =>
 					printParserStack(ParserStack(0 to StackPointer), StringBuffer, StringWriter);
