@@ -233,6 +233,11 @@ function Write-ColoredGHDLLine
 				Write-Host "${Indent}ERROR: "		-NoNewline -ForegroundColor Red
 				Write-Host $InputObject
 			}
+			elseif ($InputObject -match ":error:\s")
+			{	$ErrorRecordFound	= $true
+				Write-Host "${Indent}ERROR: "		-NoNewline -ForegroundColor Red
+				Write-Host $InputObject
+			}
 			else
 			{	Write-Host "${Indent}$InputObject"		}
 		}
@@ -266,13 +271,13 @@ function Start-Analyze
 		[Parameter(Mandatory=$true)][string[]]$SourceFiles,
 		[Parameter(Mandatory=$true)][bool]$HaltOnError
 	)
-	Write-Host "Compiling library '$Library' ..." -ForegroundColor Yellow
+	# Write-Host "Compiling library '$Library' ..." -ForegroundColor Yellow
 	$ErrorCount = 0
 	foreach ($File in $SourceFiles)
 	{	# Write-Host "Analyzing file '$File'" -ForegroundColor DarkCyan
 		$InvokeExpr = "$GHDLBinary " + ($GHDLOptions -join " ") + " --work=$Library " + $File + " 2>&1"
 		# Write-Host "  $InvokeExpr" -ForegroundColor DarkGray
-		$ErrorRecordFound = Invoke-Expression $InvokeExpr | Restore-NativeCommandStream | Write-ColoredGHDLLine $SuppressWarnings
+		$ErrorRecordFound = Invoke-Expression $InvokeExpr | Restore-NativeCommandStream | Write-ColoredGHDLLine $SuppressWarnings "  "
 		if ($LastExitCode -ne 0)
 		{	$ErrorCount += 1
 			if ($HaltOnError)
@@ -308,7 +313,7 @@ function Start-Execution
 	# Write-Host "Executing '$TopLevel'" -ForegroundColor DarkCyan
 	$InvokeExpr = "$GHDLBinary " + ($GHDLOptions -join " ") + " --work=$Library " + $TopLevel + " 2>&1"
 	# Write-Host "  $InvokeExpr" -ForegroundColor DarkGray
-	$ErrorRecordFound = Invoke-Expression $InvokeExpr | Restore-NativeCommandStream | Write-ColoredGHDLLine $SuppressWarnings
+	$ErrorRecordFound = Invoke-Expression $InvokeExpr | Restore-NativeCommandStream | Write-ColoredGHDLLine $SuppressWarnings "  "
 	if ($LastExitCode -ne 0)
 	{	$ErrorCount += 1
 		if ($HaltOnError)
@@ -352,14 +357,15 @@ if ($GHDL)
 	$FileNames =				dir -Path ./test_parsing *.json | Sort-Object -Property Name
 	$TestCase =					0
 	foreach ($File in $FileNames)
-	{	$TestName =		$File.Name.TrimEnd(".json")
-		$SourceFile = "$SourceDirectory\$File"
+	{	$TestCase +=		1
+		$TestName =			$File.Name.TrimEnd(".json")
+		$SourceFile = 	"$SourceDirectory\$File"
+		$Library =			"test_$TestCase"
 		
+		Write-Host ("Test: {0,-50}  VHDL library: {1}" -f $TestName, $Library) -ForegroundColor DarkCyan
 		$ConfigPackageContent = "package config is`n`tconstant C_JSON_FILE : STRING := `"$SourceFile`";`nend package;"
 		$ConfigPackageContent | Out-File $ConfigPackageFile -Encoding Ascii
 		
-		$TestCase +=		1
-		$Library =			"test_$TestCase"
 		$SourceFiles =	(
 			$ConfigPackageFile,
 			"TopLevel.vhdl"
