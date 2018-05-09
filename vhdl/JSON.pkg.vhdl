@@ -63,11 +63,13 @@ package JSON is
 	type T_JSON_INDEX is array(NATURAL range <>) of T_JSON_INDEX_ELEMENT;
 
 	constant C_JSON_ERROR_MESSAGE_LENGTH	: NATURAL		:= 64;
+	constant C_JSON_INDEX_MAX     : T_UINT16 := 1023;
+	constant C_JSONFILE_INDEX_MAX : T_UINT16 := 4*C_JSON_INDEX_MAX;
 
 	type T_JSON is record
 		Content				: STRING(1 to T_UINT16'high);
 		ContentCount	: T_UINT16;
-		Index					: T_JSON_INDEX(0 to 1023);
+		Index					: T_JSON_INDEX(0 to C_JSON_INDEX_MAX);
 		IndexCount		: T_UINT16;
 		Error					: STRING(1 to C_JSON_ERROR_MESSAGE_LENGTH);
 	end record;
@@ -270,11 +272,10 @@ package body JSON is
 	end procedure;
 
 	impure function jsonLoad(Stream : STRING) return T_JSON is
-		variable Result : T_JSON; -- TODO: this is only required in order to use Result.Index'high
 	begin
 		if ( ".json" = Stream(Stream'length-4 to Stream'length) ) then
 			report "jsonLoad: Filename " & Stream severity NOTE;
-			return jsonParseStream( jsonReadFile(Stream, 4*Result.Index'high) );
+			return jsonParseStream( jsonReadFile(Stream, C_JSONFILE_INDEX_MAX) );
 		else
 			report "jsonLoad: Stream" severity NOTE;
 			return jsonParseStream(Stream);
