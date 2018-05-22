@@ -103,6 +103,7 @@ package JSON is
 
 	function jsonGetBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
 	function jsonGetString(JSONContext : T_JSON; Path : STRING) return STRING;
+	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string) return integer_vector;
 
 	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
 	function jsonIsNull(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
@@ -1618,6 +1619,17 @@ package body JSON is
 		if (ElementIndex = 0) then return FALSE; end if;
 		return (Element.ElementType = ELEM_TRUE);
 	end function;
+
+	-- function to get a integer_vector from the compressed content extracted from a JSON input
+	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string) return integer_vector is
+	  constant len: positive:=to_natural_dec( jsonGetString(JSONContext, Path & "/0") );
+	  variable return_value : integer_vector(len-1 downto 0);
+	begin
+	  for i in 1 to len loop
+	    return_value(i-1) := to_natural_dec(jsonGetString(JSONContext, Path & "/" & to_string(i)));
+	  end loop;
+	  return return_value;
+	end;
 
 	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
