@@ -5,9 +5,10 @@ root = dirname(__file__)
 
 vu = VUnit.from_argv()
 
+lib = vu.add_library("JSON")
+lib.add_source_files(join(root, "..", "vhdl", "*.vhdl"))
 lib = vu.add_library("lib")
-lib.add_source_files(join(root, "../vhdl/JSON.pkg.vhdl"))
-lib.add_source_files(join(root, "../Examples/Boards_VUnit.vhdl"))
+lib.add_source_files(join(root, "..", "Examples", "Boards_VUnit.vhdl"))
 
 vu.set_generic('tb_cfg_file', '../Data/Boards2.json')
 
