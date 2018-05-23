@@ -1,0 +1,8 @@
+services: docker
+language: minimal
+install: skip
+script: ./VUnit/run.sh
+addons:
+  apt:
+    packages:
+      - docker-ce

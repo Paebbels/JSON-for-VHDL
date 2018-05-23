@@ -1,9 +1,8 @@
 library vunit_lib;
 context vunit_lib.vunit_context;
 
-use	work.json.T_JSON;
-use work.json.jsonLoad;
-use work.json.jsonGetString;
+library JSON;
+context JSON.json_ctx;
 
 entity tb_boards is
   generic (
