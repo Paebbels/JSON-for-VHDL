@@ -10,11 +10,10 @@ lib.add_source_files(join(root, "..", "vhdl", "*.vhdl"))
 lib = vu.add_library("lib")
 lib.add_source_files(join(root, "..", "Examples", "Boards_VUnit.vhdl"))
 
-vu.set_generic('tb_cfg_file', '../Data/Boards2.json')
+vu.set_generic('tb_cfg_file', '../Data/Boards1.json')
 
 import json
-file = open('../Data/Boards1.json', 'r')
-generics = json.loads(file.read())
+generics = json.loads(open('../Data/Boards0.json', 'r').read())
 vu.set_generic("tb_cfg", json.dumps(generics, separators=(',', ':')))
 
 vu.main()

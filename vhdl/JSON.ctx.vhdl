@@ -42,11 +42,11 @@ context json_ctx is
   use JSON.json.jsonNoParserError;
   use JSON.json.jsonGetErrorMessage;
   use JSON.json.jsonGetContent;
-  use JSON.json.jsonGetString;
   use JSON.json.jsonGetBoolean;
+  use JSON.json.jsonGetString;
+  use JSON.json.jsonGetIntegerArray;
   use JSON.json.jsonIsBoolean;
   use JSON.json.jsonIsNull;
   use JSON.json.jsonIsString;
   use JSON.json.jsonIsNumber;
---  use JSON.json.jsonGetIntArray;
 end context;

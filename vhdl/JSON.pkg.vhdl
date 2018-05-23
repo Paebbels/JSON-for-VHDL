@@ -103,6 +103,9 @@ package JSON is
 
 	function jsonGetBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
 	function jsonGetString(JSONContext : T_JSON; Path : STRING) return STRING;
+	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string) return integer_vector;
+	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string; Len : positive) return integer_vector;
+--	function jsonGetRealArray(JSONContext : T_JSON; Path : string) return real_vector;
 
 	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
 	function jsonIsNull(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
@@ -1485,7 +1488,7 @@ package body JSON is
 				end if;	-- Index = 0
 				for j in 1 to Index loop
 					if (IndexElement.NextIndex = 0) then
-						report "jsonGetElementIndex: Reached last element in chain." severity FAILURE;
+						report "jsonGetElementIndex: Reached last element in chain." severity NOTE; --FAILURE
 						return 0;
 					end if;
 					IndexElement		:= JSONContext.Index(IndexElement.NextIndex);
@@ -1617,6 +1620,26 @@ package body JSON is
 	begin
 		if (ElementIndex = 0) then return FALSE; end if;
 		return (Element.ElementType = ELEM_TRUE);
+	end function;
+
+	-- function to get a integer_vector from the compressed content extracted from a JSON input
+	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string) return integer_vector is
+	  variable len: natural:=0;
+	begin
+	  while jsonIsNumber(JSONContext, Path & "/" & to_string(len)) loop
+	    len := len+1;
+	  end loop;
+	  return jsonGetIntegerArray(JSONContext, Path, len);
+	end;
+
+	-- function to get a integer_vector of a fixed length from the compressed content extracted from a JSON input
+	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string; Len : positive) return integer_vector is
+	  variable return_value : integer_vector(Len-1 downto 0);
+	begin
+	  for i in 0 to Len-1 loop
+	    return_value(i) := to_natural_dec(jsonGetString(JSONContext, Path & "/" & to_string(i)));
+	  end loop;
+	  return return_value;
 	end function;
 
 	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
