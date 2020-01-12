@@ -4,10 +4,10 @@ rem configure the path to GHDL here
 set GHDL=C:\Tools\GHDL\0.34dev\bin\ghdl.exe
 
 rem analyze VHDL files
-%GHDL% -a --std=08 ..\..\Examples\config.pkg.vhdl
-%GHDL% -a --std=08 ..\..\Src\Encodings.pkg.vhdl
-%GHDL% -a --std=08 ..\..\Src\JSON.pkg.vhdl
-%GHDL% -a --std=08 ..\..\Examples\Boards2.vhdl
+%GHDL% -a --std=08 ..\..\examples\config.pkg.vhdl
+%GHDL% -a --std=08 ..\..\src\Encodings.pkg.vhdl
+%GHDL% -a --std=08 ..\..\src\JSON.pkg.vhdl
+%GHDL% -a --std=08 ..\..\examples\Boards2.vhdl
 
 rem run elaburation and simulation, redirect all outputs into a logfile
 %GHDL% -r Boards2 > Boards2.log 2>&1

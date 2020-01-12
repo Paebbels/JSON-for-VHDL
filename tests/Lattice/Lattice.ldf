@@ -6,10 +6,10 @@
         <Source name="../vhdl/JSON.pkg.vhdl" type="VHDL" type_short="VHDL">
             <Options/>
         </Source>
-        <Source name="../Examples/Boards.vhdl" type="VHDL" type_short="VHDL">
+        <Source name="../examples/Boards.vhdl" type="VHDL" type_short="VHDL">
             <Options top_module="Boards"/>
         </Source>
-        <Source name="../Examples/config.pkg.vhdl" type="VHDL" type_short="VHDL">
+        <Source name="../examples/config.pkg.vhdl" type="VHDL" type_short="VHDL">
             <Options/>
         </Source>
         <Source name="Lattice.lpf" type="Logic Preference" type_short="LPF">
@@ -21,10 +21,10 @@
         <Source name="../vhdl/JSON.pkg.vhdl" type="VHDL" type_short="VHDL">
             <Options lib="work"/>
         </Source>
-        <Source name="../Examples/Boards2.vhdl" type="VHDL" type_short="VHDL">
+        <Source name="../examples/Boards2.vhdl" type="VHDL" type_short="VHDL">
             <Options lib="work" top_module="Boards2"/>
         </Source>
-        <Source name="../Examples/config.pkg.vhdl" type="VHDL" type_short="VHDL">
+        <Source name="../examples/config.pkg.vhdl" type="VHDL" type_short="VHDL">
             <Options/>
         </Source>
         <Source name="Lattice.lpf" type="Logic Preference" type_short="LPF">

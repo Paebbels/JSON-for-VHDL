@@ -12,5 +12,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - run: ./Tests/run.sh ghdl ./Boards2.sh
-    - run: ./Tests/run.sh VUnit python3 run.py -v
+    - run: ./tests/run.sh ghdl ./Boards2.sh
+    - run: ./tests/run.sh VUnit python3 run.py -v

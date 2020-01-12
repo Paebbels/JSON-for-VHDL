@@ -12,6 +12,6 @@ shift
 
 docker run --rm -t \
   -v /$(pwd)/../://work \
-  -w //work/Tests/"$cdir" \
+  -w //work/tests/"$cdir" \
   -e VUNIT_SIMULATOR=ghdl \
   ghdl/vunit:llvm-master "$@"
