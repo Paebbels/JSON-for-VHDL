@@ -18,11 +18,11 @@ begin
   begin
     test_runner_setup(runner, runner_cfg);
 
-    check_equal(b16encode(str), enc);
-    check_equal(b16encode(v_str), enc);
+    check_equal(base16_encode(str), enc);
+    check_equal(base16_encode(v_str), enc);
 
-    check_equal(b16decode(enc), str);
-    check_equal(b16decode(v_enc), str);
+    check_equal(base16_decode(enc), str);
+    check_equal(base16_decode(v_enc), str);
 
     test_runner_cleanup(runner);
   end process;

@@ -7,8 +7,8 @@ use ieee.numeric_std.to_integer;
 
 package Encodings is
 
-  function b16encode(constant str: string) return string;
-  function b16decode(constant str: string) return string;
+  function base16_encode(constant str: string) return string;
+  function base16_decode(constant str: string) return string;
 
 end package;
 
@@ -25,7 +25,7 @@ package body Encodings is
     return result;
   end function;
 
-  function b16encode(constant str: string) return string is
+  function base16_encode(constant str: string) return string is
     constant str_i : string(1 to str'length) := str;
     variable result: string (1 to str'length * 2);
   begin
@@ -37,7 +37,7 @@ package body Encodings is
     return result;
   end function;
 
-  function b16decode(constant str: string) return string is
+  function base16_decode(constant str: string) return string is
     constant str_i : string(1 to str'length) := str;
     variable result: string (1 to str'length / 2);
   begin

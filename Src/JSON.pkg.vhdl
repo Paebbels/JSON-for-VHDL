@@ -286,7 +286,7 @@ package body JSON is
 				if str(2) = ':' then
 					return str;
 				end if;
-				return b16decode(str);
+				return base16_decode(str);
 		end case;
 	end;
 
