@@ -39,7 +39,7 @@ package body Encodings is
 
   function base16_decode(constant str: string) return string is
     alias str_i : string(1 to str'length) is str;
-    variable result: string (1 to str'length / 2);
+    variable result: string (1 to (str'length + 1) / 2);
   begin
     for x in result'range loop
       result(x) := character'val(to_integer(
