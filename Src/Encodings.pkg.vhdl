@@ -30,13 +30,11 @@ package body Encodings is
   end function;
 
   function lower (constant str: string) return string is
-    variable result : string(str'range);
+    variable result : string(str'range) := str;
   begin
     for i in str'range loop
       if (character'pos(str(i)) >= character'pos('A')) and (character'pos(str(i)) <= character'pos('Z')) then
         result(i) := character'val(character'pos(str(i)) + character'pos('a') - character'pos('A'));
-      else
-        result(i) := str(i);
       end if;
     end loop;
     return result;
