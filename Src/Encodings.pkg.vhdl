@@ -7,27 +7,12 @@ use ieee.numeric_std.to_integer;
 
 package Encodings is
 
-  function b16decode(constant str: string) return string;
   function b16encode(constant str: string) return string;
+  function b16decode(constant str: string) return string;
 
 end package;
 
 package body Encodings is
-
-  function b16decode(constant str: string) return string is
-    constant str_i : string(1 to str'length) := str;
-    variable result: string (1 to str'length / 2);
-  begin
-    for x in result'range loop
-      result(x) := character'val(to_integer(
-        to_unsigned(from_hex_string(
-          str_i(2 * x - 1 to 2 * x),
-          7, 0
-        ), 8)
-      ));
-    end loop;
-    return result;
-  end function;
 
   function lower (constant str: string) return string is
     variable result : string(str'range) := str;
@@ -48,6 +33,21 @@ package body Encodings is
       result(2 * x - 1 to 2 * x) := lower(to_hex_string(
         to_ufixed(character'pos(str_i(x)), 7, 0)
       )(1 to 2));
+    end loop;
+    return result;
+  end function;
+
+  function b16decode(constant str: string) return string is
+    constant str_i : string(1 to str'length) := str;
+    variable result: string (1 to str'length / 2);
+  begin
+    for x in result'range loop
+      result(x) := character'val(to_integer(
+        to_unsigned(from_hex_string(
+          str_i(2 * x - 1 to 2 * x),
+          7, 0
+        ), 8)
+      ));
     end loop;
     return result;
   end function;
