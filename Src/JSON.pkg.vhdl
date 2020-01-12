@@ -42,6 +42,8 @@ library	IEEE;
 use			IEEE.STD_LOGIC_1164.all;
 
 
+use work.Encodings.all;
+
 package JSON is
 	constant C_JSON_VERBOSE		: BOOLEAN		:= FALSE;
 	constant C_JSON_NUL				: CHARACTER	:= NUL;
@@ -274,15 +276,30 @@ package body JSON is
 --		report StringBuffer(1 to StringWriter - 1) severity NOTE;
 	end procedure;
 
-	impure function jsonLoad(Stream : STRING) return T_JSON is
+	impure function decode(Stream : STRING) return STRING is
+		constant str : string(1 to Stream'length) := Stream;
 	begin
-		if ( ".json" = Stream(Stream'length-4 to Stream'length) ) then
-			report "jsonLoad: Filename " & Stream severity NOTE;
-			return jsonParseStream( jsonReadFile(Stream, C_JSONFILE_INDEX_MAX) );
-		else
-			report "jsonLoad: Stream" severity NOTE;
-			return jsonParseStream(Stream);
+		case str(1) is
+			when '{'|'['|'.'|'/'|'\' =>
+				return str;
+			when others =>
+				if str(2) = ':' then
+					return str;
+				end if;
+				return b16decode(str);
+		end case;
+	end;
+
+	impure function jsonLoad(Stream : STRING) return T_JSON is
+		constant str : string(1 to Stream'length) := Stream;
+		constant raw : string := decode(str);
+	begin
+		if ( ".json" = raw(raw'length-4 to raw'length) ) then
+			report "jsonLoad: Filename " & raw severity NOTE;
+			return jsonParseStream(jsonReadFile(raw, C_JSONFILE_INDEX_MAX));
 		end if;
+		report "jsonLoad: Stream" severity NOTE;
+		return jsonParseStream(raw);
 	end function;
 
 	impure function jsonReadFile(Filename : STRING; StrLength : INTEGER) return STRING is
