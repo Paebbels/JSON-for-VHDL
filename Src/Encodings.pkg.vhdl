@@ -10,7 +10,7 @@ package Encodings is
   function b16decode(constant str: string) return string;
   function b16encode(constant str: string) return string;
 
-end;
+end package;
 
 package body Encodings is
 
@@ -27,7 +27,7 @@ package body Encodings is
       ));
     end loop;
     return result;
-  end;
+  end function;
 
   function lower (constant str: string) return string is
     variable result : string(str'range);
@@ -40,7 +40,7 @@ package body Encodings is
       end if;
     end loop;
     return result;
-  end lower;
+  end function;
 
   function b16encode(constant str: string) return string is
     constant str_i : string(1 to str'length) := str;
@@ -52,6 +52,6 @@ package body Encodings is
       )(1 to 2));
     end loop;
     return result;
-  end;
+  end function;
 
-end;
+end package body;

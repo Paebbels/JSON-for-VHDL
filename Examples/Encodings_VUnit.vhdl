@@ -6,7 +6,7 @@ use JSON.Encodings.all;
 
 entity tb_encodings is
   generic (runner_cfg : string);
-end;
+end entity;
 
 architecture tb of tb_encodings is
   constant str: string := "[""test"",[true,false,18,null,""hello""],[9,8],3324.34,832432,""world""]";
@@ -26,4 +26,4 @@ begin
 
     test_runner_cleanup(runner);
   end process;
-end;
+end architecture;
