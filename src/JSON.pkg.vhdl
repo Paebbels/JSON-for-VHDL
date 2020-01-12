@@ -277,7 +277,7 @@ package body JSON is
 	end procedure;
 
 	impure function decode(Stream : STRING) return STRING is
-		constant str : string(1 to Stream'length) := Stream;
+		alias str : string(1 to Stream'length) is Stream;
 	begin
 		case str(1) is
 			when '{'|'['|'.'|'/'|'\' =>
@@ -288,10 +288,10 @@ package body JSON is
 				end if;
 				return base16_decode(str);
 		end case;
-	end;
+	end function;
 
 	impure function jsonLoad(Stream : STRING) return T_JSON is
-		constant str : string(1 to Stream'length) := Stream;
+		alias str : string(1 to Stream'length) is Stream;
 		constant raw : string := decode(str);
 	begin
 		if ( ".json" = raw(raw'length-4 to raw'length) ) then
@@ -1641,22 +1641,22 @@ package body JSON is
 
 	-- function to get a integer_vector from the compressed content extracted from a JSON input
 	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string) return integer_vector is
-	  variable len: natural:=0;
+		variable len: natural := 0;
 	begin
-	  while jsonIsNumber(JSONContext, Path & "/" & to_string(len)) loop
-	    len := len+1;
-	  end loop;
-	  return jsonGetIntegerArray(JSONContext, Path, len);
-	end;
+		while jsonIsNumber(JSONContext, Path & "/" & to_string(len)) loop
+			len := len+1;
+		end loop;
+		return jsonGetIntegerArray(JSONContext, Path, len);
+	end function;
 
 	-- function to get a integer_vector of a fixed length from the compressed content extracted from a JSON input
 	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string; Len : positive) return integer_vector is
-	  variable return_value : integer_vector(Len-1 downto 0);
+		variable return_value : integer_vector(Len-1 downto 0);
 	begin
-	  for i in 0 to Len-1 loop
-	    return_value(i) := to_natural_dec(jsonGetString(JSONContext, Path & "/" & to_string(i)));
-	  end loop;
-	  return return_value;
+		for i in 0 to Len-1 loop
+			return_value(i) := to_natural_dec(jsonGetString(JSONContext, Path & "/" & to_string(i)));
+		end loop;
+		return return_value;
 	end function;
 
 	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
