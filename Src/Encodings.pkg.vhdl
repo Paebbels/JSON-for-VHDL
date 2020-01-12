@@ -38,7 +38,7 @@ package body Encodings is
   end function;
 
   function base16_decode(constant str: string) return string is
-    constant str_i : string(1 to str'length) := str;
+    alias str_i : string(1 to str'length) is str;
     variable result: string (1 to str'length / 2);
   begin
     for x in result'range loop
