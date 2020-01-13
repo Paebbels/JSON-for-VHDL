@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 
+set -e
+
 if [ "x$GHDL" = "x" ]; then
   GHDL=ghdl
 fi
