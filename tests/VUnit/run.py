@@ -33,7 +33,7 @@ tb = lib.get_test_benches('*tb_boards*')[0]
 
 tb.get_tests("stringified*")[0].set_generic("tb_cfg", gen_str)
 tb.get_tests("b16encoded stringified*")[0].set_generic("tb_cfg", b16enc(gen_str))
-tb.get_tests("JSON file*")[0].set_generic("tb_cfg", join(root, 'data', 'Boards0.json'))
-tb.get_tests("b16encoded JSON file*")[0].set_generic("tb_cfg", b16enc(join(root, 'data', 'Boards0.json')))
+tb.get_tests("JSON file*")[0].set_generic("tb_cfg", join(root, 'data', 'Boards0b.json'))
+tb.get_tests("b16encoded JSON file*")[0].set_generic("tb_cfg", b16enc(join(root, 'data', 'Boards0b.json')))
 
 vu.main()
