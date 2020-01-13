@@ -47,6 +47,7 @@ context json_ctx is
   use JSON.json.jsonGetBooleanArray;
   use JSON.json.jsonGetIntegerArray;
   use JSON.json.jsonGetRealArray;
+  use JSON.json.jsonGetArrayLength;
   use JSON.json.jsonIsBoolean;
   use JSON.json.jsonIsNull;
   use JSON.json.jsonIsString;

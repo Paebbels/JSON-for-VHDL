@@ -113,7 +113,7 @@ package JSON is
 	function jsonGetRealArray(JSONContext : T_JSON; Path : string) return real_vector;
 	function jsonGetRealArray(JSONContext : T_JSON; Path : string; Len : positive) return real_vector;
 
-	function jsonGetNumberArrayLength(JSONContext : T_JSON; Path : string) return natural;
+	function jsonGetArrayLength(JSONContext : T_JSON; Path : string; IsType: character) return natural;
 	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
 	function jsonIsNull(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
 	function jsonIsString(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
@@ -1646,13 +1646,9 @@ package body JSON is
 
 	-- function to get a boolean_vector from the compressed content extracted from a JSON input
 	function jsonGetBooleanArray(JSONContext : T_JSON; Path : string) return boolean_vector is
-		variable len: natural:=0;
 	begin
-		while jsonIsBoolean(JSONContext, Path & "/" & to_string(len)) loop
-			len := len+1;
-		end loop;
-		return jsonGetBooleanArray(JSONContext, Path, len);
-	end function;
+		return jsonGetBooleanArray(JSONContext, Path, jsonGetArrayLength(JSONContext, Path, 'b'));
+	end;
 
 	-- function to get a boolean_vector of a fixed length from the compressed content extracted from a JSON input
 	function jsonGetBooleanArray(JSONContext : T_JSON; Path : string; Len : positive) return boolean_vector is
@@ -1662,14 +1658,13 @@ package body JSON is
 			return_value(i) := boolean'value(jsonGetString(JSONContext, Path & "/" & to_string(i)));
 		end loop;
 		return return_value;
-	end function;
+	end;
 
 	-- function to get a integer_vector from the compressed content extracted from a JSON input
 	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string) return integer_vector is
-		variable len: natural:=0;
 	begin
-		return jsonGetIntegerArray(JSONContext, Path, jsonGetNumberArrayLength(JSONContext, Path));
-	end function;
+		return jsonGetIntegerArray(JSONContext, Path, jsonGetArrayLength(JSONContext, Path, 'i'));
+	end;
 
 	-- function to get a integer_vector of a fixed length from the compressed content extracted from a JSON input
 	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string; Len : positive) return integer_vector is
@@ -1679,14 +1674,13 @@ package body JSON is
 			return_value(i) := to_natural_dec(jsonGetString(JSONContext, Path & "/" & to_string(i)));
 		end loop;
 		return return_value;
-	end function;
+	end;
 
 	-- function to get a real_vector from the compressed content extracted from a JSON input
 	function jsonGetRealArray(JSONContext : T_JSON; Path : string) return real_vector is
-		variable len: natural:=0;
 	begin
-		return jsonGetRealArray(JSONContext, Path, jsonGetNumberArrayLength(JSONContext, Path));
-	end function;
+		return jsonGetRealArray(JSONContext, Path, jsonGetArrayLength(JSONContext, Path, 'r'));
+	end;
 
 	-- function to get a real_vector of a fixed length from the compressed content extracted from a JSON input
 	function jsonGetRealArray(JSONContext : T_JSON; Path : string; Len : positive) return real_vector is
@@ -1696,16 +1690,21 @@ package body JSON is
 			return_value(i) := real'value(jsonGetString(JSONContext, Path & "/" & to_string(i)));
 		end loop;
 		return return_value;
-	end function;
+	end;
 
-	function jsonGetNumberArrayLength(JSONContext : T_JSON; Path : string) return natural is
+	function jsonGetArrayLength(JSONContext : T_JSON; Path : string; IsType: character) return natural is
 		variable len: natural:=0;
+		variable val: boolean:=true;
 	begin
-		while jsonIsNumber(JSONContext, Path & "/" & to_string(len)) loop
-		len := len+1;
+		while(val) loop
+			case IsType is
+				when 'b'    => val := jsonIsBoolean(JSONContext, Path & "/" & to_string(len));
+				when others => val := jsonIsNumber(JSONContext, Path & "/" & to_string(len));
+			end case;
+			len := len+1;
 		end loop;
-		return len;
-	end function;
+		return len-1;
+	end;
 
 	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
 		constant ElementIndex	: T_UINT16							:= jsonGetElementIndex(JSONContext, Path);
