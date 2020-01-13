@@ -19,8 +19,7 @@ end entity;
 
 architecture rtl of Boards is
 	-- define a json file and parse its content
-	constant ConfigFile		: STRING		:= C_PROJECT_DIR & "/Data/Boards0.json";
-	constant JSONContent	: T_JSON		:= jsonLoadFile(ConfigFile);
+	constant JSONContent	: T_JSON		:= jsonLoad(C_PROJECT_DIR & "/Data/Boards0.json");
 
 	constant CounterSize	: INTEGER		:= jsonGetInteger(JSONContent, "1/2");
 
