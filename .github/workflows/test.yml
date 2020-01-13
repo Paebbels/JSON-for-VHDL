@@ -14,3 +14,6 @@ jobs:
     - uses: actions/checkout@v1
     - run: ./tests/run.sh ghdl ./Boards2.sh
     - run: ./tests/run.sh VUnit python3 run.py -v
+    - run: |
+        git clone https://github.com/nst/JSONTestSuite examples/JSONTestSuite
+        ./tests/run.sh VUnit python3 test.py -v
