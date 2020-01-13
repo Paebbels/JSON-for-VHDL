@@ -4,29 +4,29 @@
 ~$*
 
 # ignore Xilinx ISE files
-/Xilinx\ ISE/**/*.*
-/Xilinx\ ISE/**/ise
-!/Xilinx\ ISE/**/*.xise
-!/Xilinx\ ISE/**/iseconfig/filter.filter
+/tests/Xilinx\ ISE/**/*.*
+/tests/Xilinx\ ISE/**/ise
+!/tests/Xilinx\ ISE/**/*.xise
+!/tests/Xilinx\ ISE/**/iseconfig/filter.filter
 
 # ignore Xilinx Vivado files
-/Xilinx\ Vivado/**/*.*
-!/Xilinx\ Vivado/**/*.xpr
+/tests/Xilinx\ Vivado/**/*.*
+!/tests/Xilinx\ Vivado/**/*.xpr
 
 # ignore QuestaSim files
-/QuestaSim/*
-/QuestaSim/**/*.*
-!/QuestaSim/*.cmd
-!/QuestaSim/*.log
+/tests/QuestaSim/*
+/tests/QuestaSim/**/*.*
+!/tests/QuestaSim/*.cmd
+!/tests/QuestaSim/*.log
 
 # ignore GHDL files
-/ghdl/**/*.*
-!/ghdl/*.cmd
-!/ghdl/*.log
+/tests/ghdl/**/*.*
+!/tests/ghdl/*.cmd
+!/tests/ghdl/*.log
 
 # general whitelist
 !.publish
 !.git*
 
+# GHDL files
 *.cf
-JSONTestSuite/config.pkg.vhdl
