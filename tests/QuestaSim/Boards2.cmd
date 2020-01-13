@@ -4,9 +4,9 @@ rem create a new VHDL library called json
 vlib.exe json
 
 rem compile VHDL sources into that library
-vcom.exe -rangecheck -l vcom.log -93 -work json ..\Examples\config.pkg.vhdl
-vcom.exe -rangecheck -l vcom.log -93 -work json ..\vhdl\JSON.pkg.vhdl
-vcom.exe -rangecheck -l vcom.log -93 -work json ..\Examples\Boards2.vhdl
+vcom.exe -rangecheck -l vcom.log -93 -work json ..\examples\config.pkg.vhdl
+vcom.exe -rangecheck -l vcom.log -93 -work json ..\src\JSON.pkg.vhdl
+vcom.exe -rangecheck -l vcom.log -93 -work json ..\examples\Boards2.vhdl
 
 rem run simulation in CLI mode and redirect all outputs into a logfile
 vsim -vopt -c -do "run -all; quit" json.Boards2 > Boards2.log

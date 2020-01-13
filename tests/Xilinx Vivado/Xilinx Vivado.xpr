@@ -28,28 +28,28 @@
   <FileSets Version="1" Minor="31">
     <FileSet Name="sources_1" Type="DesignSrcs" RelSrcDir="$PSRCDIR/sources_1">
       <Filter Type="Srcs"/>
-      <File Path="$PPRDIR/../Examples/config.pkg.vhdl">
+      <File Path="$PPRDIR/../examples/config.pkg.vhdl">
         <FileInfo>
           <Attr Name="Library" Val="json"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../vhdl/JSON.pkg.vhdl">
+      <File Path="$PPRDIR/../src/JSON.pkg.vhdl">
         <FileInfo>
           <Attr Name="Library" Val="json"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../Examples/Boards0.vhdl">
+      <File Path="$PPRDIR/../examples/Boards0.vhdl">
         <FileInfo>
           <Attr Name="Library" Val="json"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../Examples/Boards2.vhdl">
+      <File Path="$PPRDIR/../examples/Boards2.vhdl">
         <FileInfo>
           <Attr Name="Library" Val="json"/>
           <Attr Name="AutoDisabled" Val="1"/>

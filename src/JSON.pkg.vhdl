@@ -42,6 +42,8 @@ library	IEEE;
 use			IEEE.STD_LOGIC_1164.all;
 
 
+use work.Encodings.all;
+
 package JSON is
 	constant C_JSON_VERBOSE		: BOOLEAN		:= FALSE;
 	constant C_JSON_NUL				: CHARACTER	:= NUL;
@@ -274,15 +276,30 @@ package body JSON is
 --		report StringBuffer(1 to StringWriter - 1) severity NOTE;
 	end procedure;
 
-	impure function jsonLoad(Stream : STRING) return T_JSON is
+	impure function decode(Stream : STRING) return STRING is
+		alias str : string(1 to Stream'length) is Stream;
 	begin
-		if ( ".json" = Stream(Stream'length-4 to Stream'length) ) then
-			report "jsonLoad: Filename " & Stream severity NOTE;
-			return jsonParseStream( jsonReadFile(Stream, C_JSONFILE_INDEX_MAX) );
-		else
-			report "jsonLoad: Stream" severity NOTE;
-			return jsonParseStream(Stream);
+		case str(1) is
+			when '{'|'['|'.'|'/'|'\' =>
+				return str;
+			when others =>
+				if str(2) = ':' then
+					return str;
+				end if;
+				return base16_decode(str);
+		end case;
+	end function;
+
+	impure function jsonLoad(Stream : STRING) return T_JSON is
+		alias str : string(1 to Stream'length) is Stream;
+		constant raw : string := decode(str);
+	begin
+		if ( ".json" = raw(raw'length-4 to raw'length) ) then
+			report "jsonLoad: Filename " & raw severity NOTE;
+			return jsonParseStream(jsonReadFile(raw, C_JSONFILE_INDEX_MAX));
 		end if;
+		report "jsonLoad: Stream" severity NOTE;
+		return jsonParseStream(raw);
 	end function;
 
 	impure function jsonReadFile(Filename : STRING; StrLength : INTEGER) return STRING is
@@ -1624,22 +1641,22 @@ package body JSON is
 
 	-- function to get a integer_vector from the compressed content extracted from a JSON input
 	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string) return integer_vector is
-	  variable len: natural:=0;
+		variable len: natural := 0;
 	begin
-	  while jsonIsNumber(JSONContext, Path & "/" & to_string(len)) loop
-	    len := len+1;
-	  end loop;
-	  return jsonGetIntegerArray(JSONContext, Path, len);
-	end;
+		while jsonIsNumber(JSONContext, Path & "/" & to_string(len)) loop
+			len := len+1;
+		end loop;
+		return jsonGetIntegerArray(JSONContext, Path, len);
+	end function;
 
 	-- function to get a integer_vector of a fixed length from the compressed content extracted from a JSON input
 	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string; Len : positive) return integer_vector is
-	  variable return_value : integer_vector(Len-1 downto 0);
+		variable return_value : integer_vector(Len-1 downto 0);
 	begin
-	  for i in 0 to Len-1 loop
-	    return_value(i) := to_natural_dec(jsonGetString(JSONContext, Path & "/" & to_string(i)));
-	  end loop;
-	  return return_value;
+		for i in 0 to Len-1 loop
+			return_value(i) := to_natural_dec(jsonGetString(JSONContext, Path & "/" & to_string(i)));
+		end loop;
+		return return_value;
 	end function;
 
 	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN is

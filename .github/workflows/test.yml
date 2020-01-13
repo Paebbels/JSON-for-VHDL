@@ -1,0 +1,16 @@
+name: 'test'
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * 5'
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - run: ./tests/run.sh ghdl ./Boards2.sh
+    - run: ./tests/run.sh VUnit python3 run.py -v

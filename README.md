@@ -37,7 +37,7 @@ Values can be selected by simple path expressions.
 3 Short Example
 ================================================================================
 
-Here is a short example *.json file, which describes two common FPGA boards. 
+Here is a short example *.json file, which describes two common FPGA boards.
 
     {  "ML505": {
         "FPGA":        "XC5VLX50T-1FF1136",
@@ -73,7 +73,7 @@ Load a external *.json file, parse the data structure and select a value:
 
     architecture rtl of Test is
       constant ConfigFile   : STRING    := "Boards.json";
-      constant JSONContent	: T_JSON    := jsonLoadFile(ConfigFile);
+      constant JSONContent	: T_JSON    := jsonLoad(ConfigFile);
     begin
       assert (JSONContent.Error(1) = C_JSON_NUL)
         report "Error: " & JSONContent.Error
