@@ -105,10 +105,15 @@ package JSON is
 
 	function jsonGetBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
 	function jsonGetString(JSONContext : T_JSON; Path : STRING) return STRING;
+
+	function jsonGetBooleanArray(JSONContext : T_JSON; Path : string) return boolean_vector;
+	function jsonGetBooleanArray(JSONContext : T_JSON; Path : string; Len : positive) return boolean_vector;
 	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string) return integer_vector;
 	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string; Len : positive) return integer_vector;
---	function jsonGetRealArray(JSONContext : T_JSON; Path : string) return real_vector;
+	function jsonGetRealArray(JSONContext : T_JSON; Path : string) return real_vector;
+	function jsonGetRealArray(JSONContext : T_JSON; Path : string; Len : positive) return real_vector;
 
+	function jsonGetNumberArrayLength(JSONContext : T_JSON; Path : string) return natural;
 	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
 	function jsonIsNull(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
 	function jsonIsString(JSONContext : T_JSON; Path : STRING) return BOOLEAN;
@@ -1639,14 +1644,31 @@ package body JSON is
 		return (Element.ElementType = ELEM_TRUE);
 	end function;
 
-	-- function to get a integer_vector from the compressed content extracted from a JSON input
-	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string) return integer_vector is
-		variable len: natural := 0;
+	-- function to get a boolean_vector from the compressed content extracted from a JSON input
+	function jsonGetBooleanArray(JSONContext : T_JSON; Path : string) return boolean_vector is
+		variable len: natural:=0;
 	begin
-		while jsonIsNumber(JSONContext, Path & "/" & to_string(len)) loop
+		while jsonIsBoolean(JSONContext, Path & "/" & to_string(len)) loop
 			len := len+1;
 		end loop;
-		return jsonGetIntegerArray(JSONContext, Path, len);
+		return jsonGetBooleanArray(JSONContext, Path, len);
+	end function;
+
+	-- function to get a boolean_vector of a fixed length from the compressed content extracted from a JSON input
+	function jsonGetBooleanArray(JSONContext : T_JSON; Path : string; Len : positive) return boolean_vector is
+		variable return_value : boolean_vector(Len-1 downto 0);
+	begin
+		for i in 0 to Len-1 loop
+			return_value(i) := boolean'value(jsonGetString(JSONContext, Path & "/" & to_string(i)));
+		end loop;
+		return return_value;
+	end function;
+
+	-- function to get a integer_vector from the compressed content extracted from a JSON input
+	function jsonGetIntegerArray(JSONContext : T_JSON; Path : string) return integer_vector is
+		variable len: natural:=0;
+	begin
+		return jsonGetIntegerArray(JSONContext, Path, jsonGetNumberArrayLength(JSONContext, Path));
 	end function;
 
 	-- function to get a integer_vector of a fixed length from the compressed content extracted from a JSON input
@@ -1657,6 +1679,32 @@ package body JSON is
 			return_value(i) := to_natural_dec(jsonGetString(JSONContext, Path & "/" & to_string(i)));
 		end loop;
 		return return_value;
+	end function;
+
+	-- function to get a real_vector from the compressed content extracted from a JSON input
+	function jsonGetRealArray(JSONContext : T_JSON; Path : string) return real_vector is
+		variable len: natural:=0;
+	begin
+		return jsonGetRealArray(JSONContext, Path, jsonGetNumberArrayLength(JSONContext, Path));
+	end function;
+
+	-- function to get a real_vector of a fixed length from the compressed content extracted from a JSON input
+	function jsonGetRealArray(JSONContext : T_JSON; Path : string; Len : positive) return real_vector is
+		variable return_value : real_vector(Len-1 downto 0);
+	begin
+		for i in 0 to Len-1 loop
+			return_value(i) := real'value(jsonGetString(JSONContext, Path & "/" & to_string(i)));
+		end loop;
+		return return_value;
+	end function;
+
+	function jsonGetNumberArrayLength(JSONContext : T_JSON; Path : string) return natural is
+		variable len: natural:=0;
+	begin
+		while jsonIsNumber(JSONContext, Path & "/" & to_string(len)) loop
+		len := len+1;
+		end loop;
+		return len;
 	end function;
 
 	function jsonIsBoolean(JSONContext : T_JSON; Path : STRING) return BOOLEAN is
