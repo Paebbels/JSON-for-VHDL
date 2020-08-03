@@ -7,7 +7,7 @@ use	work.json.all;
 
 entity Boards is
 	Generic (
-		C_PROJECT_DIR: string := "D:\git\GitHub\JSON-for-VHDL"
+		C_PROJECT_DIR: string := "C:\git\GitHub\Paebbels\JSON-for-VHDL"
 	);
 	Port (
 		Clock	: in	STD_LOGIC;
@@ -20,9 +20,9 @@ end entity;
 architecture rtl of Boards is
 	-- define a json file and parse its content
 	constant ConfigFile		: STRING		:= C_PROJECT_DIR & "/Data/Boards0.json";
-	constant JSONContent	: T_JSON		:= jsonLoadFile(ConfigFile);
+	constant JSONContent	: T_JSON		:= jsonLoad(ConfigFile);
 
-	constant CounterSize	: INTEGER		:= jsonGetInteger(JSONContent, "1/2");
+	constant CounterSize	: INTEGER		:= 5; -- jsonGetInteger(JSONContent, "1/2");
 
 	procedure assertMessage(cond : BOOLEAN; msg : STRING) is
 	begin
