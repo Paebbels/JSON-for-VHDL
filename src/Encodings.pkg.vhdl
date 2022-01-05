@@ -37,17 +37,14 @@ package body Encodings is
     return result;
   end function;
 
-  function base16_decode(constant str: string) return string is
+  function base16_decode(constant str : string) return string is
     alias str_i : string(1 to str'length) is str;
-    variable result: string (1 to (str'length + 1) / 2);
+    variable result : string (1 to (str'length + 1) / 2);
+    variable byte_as_hex : string(1 to 2);
   begin
     for x in result'range loop
-      result(x) := character'val(to_integer(
-        to_unsigned(from_hex_string(
-          str_i(2 * x - 1 to 2 * x),
-          7, 0
-        ), 8)
-      ));
+      byte_as_hex := str_i(2 * x - 1 to 2 * x);
+      result(x) := character'val(to_integer(to_unsigned(from_hex_string(byte_as_hex, 7, 0), 8)));
     end loop;
     return result;
   end function;
