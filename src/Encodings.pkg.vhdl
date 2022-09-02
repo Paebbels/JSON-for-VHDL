@@ -3,6 +3,7 @@ use ieee.fixed_pkg.from_hex_string;
 use ieee.fixed_pkg.to_unsigned;
 use ieee.fixed_pkg.to_hex_string;
 use ieee.fixed_pkg.to_ufixed;
+use ieee.fixed_pkg.ufixed;
 use ieee.numeric_std.to_integer;
 
 package Encodings is
@@ -44,7 +45,7 @@ package body Encodings is
   begin
     for x in result'range loop
       byte_as_hex := str_i(2 * x - 1 to 2 * x);
-      result(x) := character'val(to_integer(to_unsigned(from_hex_string(byte_as_hex, 7, 0), 8)));
+      result(x) := character'val(to_integer(to_unsigned(ufixed'(from_hex_string(byte_as_hex, 7, 0)), 8)));
     end loop;
     return result;
   end function;
