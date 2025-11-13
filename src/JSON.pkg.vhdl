@@ -224,11 +224,11 @@ package body JSON is
 		variable Result			: NATURAL;
 		variable Digit			: INTEGER;
 	begin
-		for i in str'range loop
-			Result	:= Result * 10 + (character'pos(str(i)) - character'pos('0'));
-		end loop;
-		return Result;
---		return INTEGER'value(str);			-- 'value(...) is not supported by Vivado Synth 2014.1
+--		for i in str'range loop
+--			Result	:= Result * 10 + (character'pos(str(i)) - character'pos('0'));
+--		end loop;
+--		return Result;
+		return INTEGER'value(str);			-- 'value(...) is not supported by Vivado Synth 2014.1
 	end function;
 
 	function errorMessage(str : string) return STRING is
