@@ -307,19 +307,29 @@ package body JSON is
 		variable CurrentLine	: LINE;
 		variable IsString			: BOOLEAN;
 		variable Stream       : STRING(1 to StrLength);
-		variable z            : NATURAL range 0 to StrLength:=1;
-		variable nullchar     : BOOLEAN;
+		variable CurrentStr   : STRING(1 to StrLength);
+		variable Len          : NATURAL range 1 to StrLength +1;
+		variable z            : NATURAL range 1 to StrLength +1 :=1;
 	begin
 		report "jsonReadFile: " & Filename severity NOTE;
-		loopi : for i in 0 to StrLength loop
+		loopi : loop
 			exit when endfile(FileHandle);
 			readline(FileHandle, CurrentLine);
-			nullchar := true;
-			loopj : for j in 1 to CurrentLine'high loop
-				read(CurrentLine, Stream(z), IsString);
-				next loopi when (IsString = FALSE);
-				if nullchar and ((Stream(z)/=' ') and (Stream(z)/=HT)) then nullchar := false; end if;
-				if not nullchar then z := z+1; end if;
+			Len := CurrentLine'length;
+			read(CurrentLine, CurrentStr(1 to Len), IsString);
+			assert IsString report "unexpected error during file-read." severity failure;
+			
+			loopj : for j in 1 to Len loop
+				if ((CurrentStr(j)/=' ') and (CurrentStr(j)/=HT)) then  -- Remove leading whitespaces
+					if z + Len - j > StrLength then
+						report "File to large. Skipping other characters." severity failure;
+						exit loopi; 
+					end if;
+					
+					Stream(z to z + Len -j) := CurrentStr(j to Len);
+					z := z + Len - j + 1;
+					exit loopj;
+				end if;
 			end loop;
 		end loop;
 		file_close(FileHandle);
@@ -390,7 +400,6 @@ package body JSON is
 		variable Column_Index		: T_UINT16;
 
 	begin
-
 		jsonStringClear(StringBuffer, StringWriter);
 
 		StackPointer										:= 0;
