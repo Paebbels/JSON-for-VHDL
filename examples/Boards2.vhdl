@@ -7,7 +7,7 @@ use	work.json.all;
 
 entity Boards2 is
 	Generic (
-		C_PROJECT_DIR: string := "D:\git\GitHub\JSON-for-VHDL"
+		C_PROJECT_DIR: string := "C:\git\GitHub\JSON-for-VHDL"
 	);
 	Port (
 		Clock	: in	STD_LOGIC;

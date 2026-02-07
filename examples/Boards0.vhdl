@@ -5,9 +5,9 @@ use	IEEE.NUMERIC_STD.ALL;
 use	work.json.all;
 
 
-entity Boards is
+entity Boards0 is
 	Generic (
-		C_PROJECT_DIR: string := "D:\git\GitHub\JSON-for-VHDL"
+		C_PROJECT_DIR: string := "C:\git\GitHub\JSON-for-VHDL"
 	);
 	Port (
 		Clock	: in	STD_LOGIC;
@@ -17,9 +17,9 @@ entity Boards is
 end entity;
 
 
-architecture rtl of Boards is
+architecture rtl of Boards0 is
 	-- define a json file and parse its content
-	constant ConfigFile		: STRING		:= C_PROJECT_DIR & "/Data/Boards0.json";
+	constant ConfigFile		: STRING		:= C_PROJECT_DIR & "/data/Boards0.json";
 	constant JSONContent	: T_JSON		:= jsonLoadFile(ConfigFile);
 
 	constant CounterSize	: INTEGER		:= jsonGetInteger(JSONContent, "1/2");

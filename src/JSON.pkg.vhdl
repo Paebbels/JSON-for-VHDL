@@ -35,18 +35,17 @@
 -- limitations under the License.
 -- ============================================================================
 
-library Std;
-use			Std.TextIO.all;
+use     Std.TextIO.all;
 
 library	IEEE;
-use			IEEE.STD_LOGIC_1164.all;
+use     IEEE.STD_LOGIC_1164.all;
 
 
 use work.Encodings.all;
 
 package JSON is
-	constant C_JSON_VERBOSE		: BOOLEAN		:= FALSE;
-	constant C_JSON_NUL				: CHARACTER	:= NUL;
+	constant C_JSON_VERBOSE : BOOLEAN   := FALSE;
+	constant C_JSON_NUL     : character := NUL;   -- TODO: remove this because of an old Altera Quartus issue.
 
 	subtype T_UINT16 is NATURAL range 0 to 2**16-1;
 	type T_NATVEC is array(NATURAL range <>) of NATURAL;
@@ -121,55 +120,43 @@ package body JSON is
 	function ite(cond : BOOLEAN; value1 : STRING; value2 : STRING) return STRING is begin
 		if cond then	return value1;	else	return value2;	end if;
 	end function;
+	
+	-- TODO: replace by minimum from VHDL-2008
 	function imin(arg1 : integer; arg2 : integer) return integer is begin
 		if arg1 < arg2 then return arg1;	else	return arg2;	end if;
 	end function;
+	-- TODO: replace by maximum from VHDL-2008
 	function imax(arg1 : integer; arg2 : integer) return integer is begin
 		if arg1 > arg2 then return arg1;	else	return arg2;	end if;
 	end function;
 
 	-- chr_is* function
-	function chr_isDigit(chr : CHARACTER) return BOOLEAN is
+	function chr_isDigit(chr : character) return BOOLEAN is
 	begin
-		return (CHARACTER'pos('0') <= CHARACTER'pos(chr)) and (CHARACTER'pos(chr) <= CHARACTER'pos('9'));
+		return (character'pos('0') <= character'pos(chr)) and (character'pos(chr) <= character'pos('9'));
 	end function;
 
---	function chr_isLowerHexDigit(chr : CHARACTER) return BOOLEAN is
---	begin
---		return (CHARACTER'pos('a') <= CHARACTER'pos(chr)) and (CHARACTER'pos(chr) <= CHARACTER'pos('f'));
---	end function;
---
---	function chr_isUpperHexDigit(chr : CHARACTER) return BOOLEAN is
---	begin
---		return (CHARACTER'pos('A') <= CHARACTER'pos(chr)) and (CHARACTER'pos(chr) <= CHARACTER'pos('F'));
---	end function;
---
---	function chr_isHexDigit(chr : CHARACTER) return BOOLEAN is
---	begin
---		return chr_isDigit(chr) or chr_isLowerHexDigit(chr) or chr_isUpperHexDigit(chr);
---	end function;
-
-	function chr_isLowerAlpha(chr : CHARACTER) return BOOLEAN is
+	function chr_isLowerAlpha(chr : character) return BOOLEAN is
 	begin
-		return (CHARACTER'pos('a') <= CHARACTER'pos(chr)) and (CHARACTER'pos(chr) <= CHARACTER'pos('z'));
+		return (character'pos('a') <= character'pos(chr)) and (character'pos(chr) <= character'pos('z'));
 	end function;
 
-	function chr_isUpperAlpha(chr : CHARACTER) return BOOLEAN is
+	function chr_isUpperAlpha(chr : character) return BOOLEAN is
 	begin
-		return (CHARACTER'pos('A') <= CHARACTER'pos(chr)) and (CHARACTER'pos(chr) <= CHARACTER'pos('Z'));
+		return (character'pos('A') <= character'pos(chr)) and (character'pos(chr) <= character'pos('Z'));
 	end function;
 
-	function chr_isAlpha(chr : CHARACTER) return BOOLEAN is
+	function chr_isAlpha(chr : character) return BOOLEAN is
 	begin
 		return chr_isLowerAlpha(chr) or chr_isUpperAlpha(chr);
 	end function;
 
-	function chr_isSpecial(chr : CHARACTER) return BOOLEAN is
+	function chr_isSpecial(chr : character) return BOOLEAN is
 	begin
 		return (chr = '_') or (chr = '-') or (chr = '.') or (chr = '#') or (chr = '!') or (chr = '$');
 	end function;
 
-	function chr_isIdentifier(chr : CHARACTER) return BOOLEAN is
+	function chr_isIdentifier(chr : character) return BOOLEAN is
 	begin
 		return	chr_isAlpha(chr) or chr_isDigit(chr) or chr_isSpecial(chr);
 	end function;
@@ -337,7 +324,7 @@ package body JSON is
 	end function;
 
 	impure function jsonParseStream(Stream : STRING) return T_JSON is
-		variable CurrentChar	: CHARACTER;
+		variable CurrentChar	: character;
 
 		variable Result				: T_JSON;
 
@@ -381,7 +368,7 @@ package body JSON is
 --			report StringBuffer(1 to StringWriter - 1) severity NOTE;
 		end procedure;
 
-		procedure readChar(Pointer: inout T_UINT16; Current: inout CHARACTER) is
+		procedure readChar(Pointer: inout T_UINT16; Current: inout character) is
 		begin
 			Pointer := Pointer+1;
 			Current := Stream(Pointer);
@@ -476,7 +463,7 @@ package body JSON is
 								for k in 2 to 4 loop
 									readChar(Column_Index, CurrentChar);
 									if (CurrentChar /= C_JSON_NULL(k)) then
-										Result.Error	:= errorMessage("Parsing List(" & printPos(Column_Index) & "): Keyword 'null' has a not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing List(" & printPos(Column_Index) & "): Keyword 'null' has a not allowed character.");
 										exit loopi;
 									end if;
 								end loop;
@@ -497,7 +484,7 @@ package body JSON is
 								for k in 2 to 4 loop
 									readChar(Column_Index, CurrentChar);
 									if (CurrentChar /= C_JSON_TRUE(k)) then
-										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'true' as not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'true' as not allowed character.");
 										exit loopi;
 									end if;
 								end loop;
@@ -518,7 +505,7 @@ package body JSON is
 								for k in 2 to 5 loop
 									readChar(Column_Index, CurrentChar);
 									if (CurrentChar /= C_JSON_FALSE(k)) then
-										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'false' as not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'false' as not allowed character.");
 										exit loopi;
 									end if;
 								end loop;
@@ -600,7 +587,7 @@ package body JSON is
 								-- consume the opening quote
 								readChar(Column_Index, CurrentChar);
 								if (CurrentChar /= '"') then		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
-									Result.Error	:= errorMessage("Parsing Link(" & printPos(Column_Index) & "): Begin of link has a not allowed CHARACTER.");
+									Result.Error	:= errorMessage("Parsing Link(" & printPos(Column_Index) & "): Begin of link has a not allowed character.");
 									exit loopi;
 								end if;
 
@@ -649,7 +636,7 @@ package body JSON is
 								for k in 2 to 4 loop
 									readChar(Column_Index, CurrentChar);
 									if (CurrentChar /= C_JSON_NULL(k)) then
-										Result.Error	:= errorMessage("Parsing List(" & printPos(Column_Index) & "): Keyword 'null' has a not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing List(" & printPos(Column_Index) & "): Keyword 'null' has a not allowed character.");
 										exit loopi;
 									end if;
 								end loop;
@@ -670,7 +657,7 @@ package body JSON is
 								for k in 2 to 4 loop
 									readChar(Column_Index, CurrentChar);
 									if (CurrentChar /= C_JSON_TRUE(k)) then
-										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'true' as not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'true' as not allowed character.");
 										exit loopi;
 									end if;
 								end loop;
@@ -691,7 +678,7 @@ package body JSON is
 								for k in 2 to 5 loop
 									readChar(Column_Index, CurrentChar);
 									if (CurrentChar /= C_JSON_FALSE(k)) then
-										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'false' as not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'false' as not allowed character.");
 										exit loopi;
 									end if;
 								end loop;
@@ -767,7 +754,7 @@ package body JSON is
 								-- consume the opening quote
 								readChar(Column_Index, CurrentChar);
 								if (CurrentChar /= '"') then		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
-									Result.Error	:= errorMessage("Parsing Link(" & printPos(Column_Index) & "): Begin of link has a not allowed CHARACTER.");
+									Result.Error	:= errorMessage("Parsing Link(" & printPos(Column_Index) & "): Begin of link has a not allowed character.");
 									exit loopi;
 								end if;
 
@@ -816,7 +803,7 @@ package body JSON is
 								for k in 2 to 4 loop
 									readChar(Column_Index, CurrentChar);
 									if (CurrentChar /= C_JSON_NULL(k)) then
-										Result.Error	:= errorMessage("Parsing List(" & printPos(Column_Index) & "): Keyword 'null' has a not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing List(" & printPos(Column_Index) & "): Keyword 'null' has a not allowed character.");
 										exit loopi;
 									end if;
 								end loop;
@@ -837,7 +824,7 @@ package body JSON is
 								for k in 2 to 4 loop
 									readChar(Column_Index, CurrentChar);
 									if (CurrentChar /= C_JSON_TRUE(k)) then
-										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'true' as not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'true' as not allowed character.");
 										exit loopi;
 									end if;
 								end loop;
@@ -858,7 +845,7 @@ package body JSON is
 								for k in 2 to 5 loop
 									readChar(Column_Index, CurrentChar);
 									if (CurrentChar /= C_JSON_FALSE(k)) then
-										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'false' as not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'false' as not allowed character.");
 										exit loopi;
 									end if;
 								end loop;
@@ -936,7 +923,7 @@ package body JSON is
 								-- consume the opening quote
 								readChar(Column_Index, CurrentChar);
 								if (CurrentChar /= '"') then		-- a single quote to restore the syntax highlighting FSM in Notepad++ "
-									Result.Error	:= errorMessage("Parsing Link(" & printPos(Column_Index) & "): Begin of link has a not allowed CHARACTER.");
+									Result.Error	:= errorMessage("Parsing Link(" & printPos(Column_Index) & "): Begin of link has a not allowed character.");
 									exit loopi;
 								end if;
 
@@ -985,7 +972,7 @@ package body JSON is
 								for k in 2 to 4 loop
 									readChar(Column_Index, CurrentChar);
 									if (CurrentChar /= C_JSON_NULL(k)) then
-										Result.Error	:= errorMessage("Parsing List(" & printPos(Column_Index) & "): Keyword 'null' has a not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing List(" & printPos(Column_Index) & "): Keyword 'null' has a not allowed character.");
 										exit loopi;
 									end if;
 								end loop;
@@ -1006,7 +993,7 @@ package body JSON is
 								for k in 2 to 4 loop
 									readChar(Column_Index, CurrentChar);
 									if (CurrentChar /= C_JSON_TRUE(k)) then
-										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'true' as not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'true' as not allowed character.");
 										exit loopi;
 									end if;
 								end loop;
@@ -1027,7 +1014,7 @@ package body JSON is
 								for k in 2 to 5 loop
 									readChar(Column_Index, CurrentChar);
 									if (CurrentChar /= C_JSON_FALSE(k)) then
-										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'false' as not allowed CHARACTERs.");
+										Result.Error	:= errorMessage("Parsing Delimiter3(" & printPos(Column_Index) & "): Keyword 'false' as not allowed character.");
 										exit loopi;
 									end if;
 								end loop;
