@@ -28,6 +28,10 @@
 !/tests/nvc/*.cmd
 !/tests/nvc/*.log
 
+# Sigasi files
+/.sigasi/**/*.*
+!/.sigasi/project.sigasi
+
 # general whitelist
 !.git*
 
