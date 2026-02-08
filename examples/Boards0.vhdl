@@ -20,9 +20,10 @@ end entity;
 architecture rtl of Boards0 is
 	-- define a json file and parse its content
 	constant ConfigFile		: STRING		:= C_PROJECT_DIR & "/data/Boards0.json";
-	constant JSONContent	: T_JSON		:= jsonLoadFile(ConfigFile);
+	constant JSONContent	: T_JSON		:= jsonLoad(ConfigFile);
 
-	constant CounterSize	: INTEGER		:= jsonGetInteger(JSONContent, "1/2");
+	-- constant CounterSize	: INTEGER		:= jsonGetInteger(JSONContent, "1/2");
+	constant CounterSize	: INTEGER		:= 8;
 
 	procedure assertMessage(cond : BOOLEAN; msg : STRING) is
 	begin
