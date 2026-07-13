@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Product Version: Vivado v2025.2 (64-bit)                              -->
+<!-- Product Version: Vivado v2026.1 (64-bit)                              -->
 <!--                                                                         -->
 <!-- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.                   -->
-<!-- Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.   -->
+<!-- Copyright 2022-2026 Advanced Micro Devices, Inc. All Rights Reserved.   -->
 
-<Project Product="Vivado" Version="7" Minor="71" Path="C:/Git/GitHub/Paebbels/JSON-for-VHDL/tests/Vivado/Vivado.xpr">
+<Project Product="Vivado" Version="7" Minor="72" Path="C:/git/GitHub/Paebbels/JSON-for-VHDL/tests/Vivado/Vivado.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
     <Option Name="Id" Val="b8bace08d9ff430ca4f772f0e7ba6786"/>
@@ -57,20 +57,6 @@
     <Option Name="IPUserFilesDir" Val="$PIPUSERFILESDIR"/>
     <Option Name="IPStaticSourceDir" Val="$PIPUSERFILESDIR/ipstatic"/>
     <Option Name="EnableBDX" Val="FALSE"/>
-    <Option Name="WTXSimLaunchSim" Val="0"/>
-    <Option Name="WTModelSimLaunchSim" Val="0"/>
-    <Option Name="WTQuestaLaunchSim" Val="0"/>
-    <Option Name="WTIesLaunchSim" Val="0"/>
-    <Option Name="WTVcsLaunchSim" Val="0"/>
-    <Option Name="WTRivieraLaunchSim" Val="0"/>
-    <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="0"/>
-    <Option Name="WTModelSimExportSim" Val="0"/>
-    <Option Name="WTQuestaExportSim" Val="0"/>
-    <Option Name="WTIesExportSim" Val="0"/>
-    <Option Name="WTVcsExportSim" Val="0"/>
-    <Option Name="WTRivieraExportSim" Val="0"/>
-    <Option Name="WTActivehdlExportSim" Val="0"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -84,30 +70,6 @@
   <FileSets Version="1" Minor="32">
     <FileSet Name="src_Board0" Type="DesignSrcs" RelSrcDir="$PSRCDIR/src_Board0" RelGenDir="$PGENDIR/src_Board0">
       <Filter Type="Srcs"/>
-      <File Path="$PPRDIR/../../src/JSON.ctx.vhdl">
-        <FileInfo SFType="VHDL2008">
-          <Attr Name="Library" Val="json"/>
-          <Attr Name="UserDisabled" Val="1"/>
-          <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="simulation"/>
-        </FileInfo>
-      </File>
-      <File Path="$PPRDIR/../../examples/Boards_VUnit.vhdl">
-        <FileInfo SFType="VHDL2008">
-          <Attr Name="Library" Val="json"/>
-          <Attr Name="UserDisabled" Val="1"/>
-          <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="simulation"/>
-        </FileInfo>
-      </File>
-      <File Path="$PPRDIR/../../examples/Encodings_VUnit.vhdl">
-        <FileInfo SFType="VHDL2008">
-          <Attr Name="Library" Val="json"/>
-          <Attr Name="UserDisabled" Val="1"/>
-          <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="simulation"/>
-        </FileInfo>
-      </File>
       <File Path="$PPRDIR/../../src/Encodings.pkg.vhdl">
         <FileInfo SFType="VHDL2008">
           <Attr Name="Library" Val="json"/>
@@ -129,15 +91,6 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <Config>
-        <Option Name="DesignMode" Val="RTL"/>
-        <Option Name="TopModule" Val="Boards0"/>
-        <Option Name="TopAutoSet" Val="TRUE"/>
-        <Generic Name="C_PROJECT_DIR" Val="C:/Git/GitHub/Paebbels/JSON-for-VHDL"/>
-      </Config>
-    </FileSet>
-    <FileSet Name="src_Board1" Type="DesignSrcs" RelSrcDir="$PSRCDIR/src_Board1" RelGenDir="$PGENDIR/src_Board1">
-      <Filter Type="Srcs"/>
       <File Path="$PPRDIR/../../src/JSON.ctx.vhdl">
         <FileInfo SFType="VHDL2008">
           <Attr Name="Library" Val="json"/>
@@ -162,6 +115,15 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
+      <Config>
+        <Option Name="DesignMode" Val="RTL"/>
+        <Option Name="TopModule" Val="Boards0"/>
+        <Option Name="TopAutoSet" Val="TRUE"/>
+        <Generic Name="C_PROJECT_DIR" Val="C:/Git/GitHub/Paebbels/JSON-for-VHDL"/>
+      </Config>
+    </FileSet>
+    <FileSet Name="src_Board1" Type="DesignSrcs" RelSrcDir="$PSRCDIR/src_Board1" RelGenDir="$PGENDIR/src_Board1">
+      <Filter Type="Srcs"/>
       <File Path="$PPRDIR/../../src/Encodings.pkg.vhdl">
         <FileInfo SFType="VHDL2008">
           <Attr Name="Library" Val="json"/>
@@ -183,15 +145,6 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <Config>
-        <Option Name="DesignMode" Val="RTL"/>
-        <Option Name="TopModule" Val="Boards1"/>
-        <Option Name="TopAutoSet" Val="TRUE"/>
-        <Generic Name="C_PROJECT_DIR" Val="C:/Git/GitHub/Paebbels/JSON-for-VHDL"/>
-      </Config>
-    </FileSet>
-    <FileSet Name="src_Board2" Type="DesignSrcs" RelSrcDir="$PSRCDIR/src_Board2" RelGenDir="$PGENDIR/src_Board2">
-      <Filter Type="Srcs"/>
       <File Path="$PPRDIR/../../src/JSON.ctx.vhdl">
         <FileInfo SFType="VHDL2008">
           <Attr Name="Library" Val="json"/>
@@ -216,6 +169,15 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
+      <Config>
+        <Option Name="DesignMode" Val="RTL"/>
+        <Option Name="TopModule" Val="Boards1"/>
+        <Option Name="TopAutoSet" Val="TRUE"/>
+        <Generic Name="C_PROJECT_DIR" Val="C:/Git/GitHub/Paebbels/JSON-for-VHDL"/>
+      </Config>
+    </FileSet>
+    <FileSet Name="src_Board2" Type="DesignSrcs" RelSrcDir="$PSRCDIR/src_Board2" RelGenDir="$PGENDIR/src_Board2">
+      <Filter Type="Srcs"/>
       <File Path="$PPRDIR/../../src/Encodings.pkg.vhdl">
         <FileInfo SFType="VHDL2008">
           <Attr Name="Library" Val="json"/>
@@ -233,6 +195,30 @@
       <File Path="$PPRDIR/../../examples/Boards2.vhdl">
         <FileInfo SFType="VHDL2008">
           <Attr Name="Library" Val="json"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../../src/JSON.ctx.vhdl">
+        <FileInfo SFType="VHDL2008">
+          <Attr Name="Library" Val="json"/>
+          <Attr Name="UserDisabled" Val="1"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../../examples/Boards_VUnit.vhdl">
+        <FileInfo SFType="VHDL2008">
+          <Attr Name="Library" Val="json"/>
+          <Attr Name="UserDisabled" Val="1"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../../examples/Encodings_VUnit.vhdl">
+        <FileInfo SFType="VHDL2008">
+          <Attr Name="Library" Val="json"/>
+          <Attr Name="UserDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
@@ -317,7 +303,7 @@
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
     </Run>
-    <Run Id="synth_Board1" Type="Ft3:Synth" SrcSet="src_Board1" Part="xc7a100tcsg324-1" ConstrsSet="constrs_1" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" State="current" Dir="$PRUNDIR/synth_Board1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/synth_Board1" AutoRQSDir="$PSRCDIR/utils_1/imports/synth_Board1" ParallelReportGen="true">
+    <Run Id="synth_Board1" Type="Ft3:Synth" SrcSet="src_Board1" Part="xc7a100tcsg324-1" ConstrsSet="constrs_1" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/synth_Board1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/synth_Board1" AutoRQSDir="$PSRCDIR/utils_1/imports/synth_Board1" ParallelReportGen="true">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2015"/>
         <Step Id="synth_design">
@@ -329,7 +315,7 @@
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
     </Run>
-    <Run Id="synth_Board2" Type="Ft3:Synth" SrcSet="src_Board2" Part="xc7a100tcsg324-1" ConstrsSet="constrs_1" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/synth_Board2" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/synth_Board2" AutoRQSDir="$PSRCDIR/utils_1/imports/synth_Board2" ParallelReportGen="true">
+    <Run Id="synth_Board2" Type="Ft3:Synth" SrcSet="src_Board2" Part="xc7a100tcsg324-1" ConstrsSet="constrs_1" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" State="current" Dir="$PRUNDIR/synth_Board2" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/synth_Board2" AutoRQSDir="$PSRCDIR/utils_1/imports/synth_Board2" ParallelReportGen="true">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2015"/>
         <Step Id="synth_design">
@@ -358,7 +344,7 @@
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
     </Run>
-    <Run Id="impl_Board1" Type="Ft2:EntireDesign" Part="xc7a100tcsg324-1" ConstrsSet="constrs_1" Description="Vivado Implementation Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" State="current" SynthRun="synth_Board1" IncludeInArchive="true" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/impl_Board1" AutoRQSDir="$PSRCDIR/utils_1/imports/impl_Board1" ParallelReportGen="true">
+    <Run Id="impl_Board1" Type="Ft2:EntireDesign" Part="xc7a100tcsg324-1" ConstrsSet="constrs_1" Description="Vivado Implementation Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="synth_Board1" IncludeInArchive="true" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/impl_Board1" AutoRQSDir="$PSRCDIR/utils_1/imports/impl_Board1" ParallelReportGen="true">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2015"/>
         <Step Id="init_design"/>
@@ -375,7 +361,7 @@
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
     </Run>
-    <Run Id="impl_Board2" Type="Ft2:EntireDesign" Part="xc7a100tcsg324-1" ConstrsSet="constrs_1" Description="Vivado Implementation Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="synth_Board2" IncludeInArchive="true" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/impl_Board2" AutoRQSDir="$PSRCDIR/utils_1/imports/impl_Board2" ParallelReportGen="true">
+    <Run Id="impl_Board2" Type="Ft2:EntireDesign" Part="xc7a100tcsg324-1" ConstrsSet="constrs_1" Description="Vivado Implementation Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" State="current" SynthRun="synth_Board2" IncludeInArchive="true" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/impl_Board2" AutoRQSDir="$PSRCDIR/utils_1/imports/impl_Board2" ParallelReportGen="true">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2015"/>
         <Step Id="init_design"/>
