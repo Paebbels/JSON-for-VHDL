@@ -1496,7 +1496,7 @@ package body JSON is
 				end if;    -- Index = 0
 				for j in 1 to Index loop
 					if (IndexElement.NextIndex = 0) then
-						-- report "jsonGetElementIndex: Reached last element in chain." severity NOTE; --FAILURE
+						report "jsonGetElementIndex: Reached last element in chain." severity NOTE; --FAILURE
 						return 0;
 					end if;
 					IndexElement        := JSONContext.Index(IndexElement.NextIndex);
