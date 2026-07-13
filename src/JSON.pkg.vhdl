@@ -60,9 +60,9 @@ package JSON is
 
 	type T_JSON_INDEX is array(natural range <>) of T_JSON_INDEX_ELEMENT;
 
-	constant C_JSON_ERROR_MESSAGE_LENGTH : natural  := 64;
-	constant C_JSON_INDEX_MAX            : T_UINT16 := 1023;
-	constant C_JSONFILE_INDEX_MAX        : T_UINT16 := 4*C_JSON_INDEX_MAX;
+	constant C_JSON_ERROR_MESSAGE_LENGTH	: NATURAL		:= 64;
+	constant C_JSON_INDEX_MAX     : T_UINT16 := 4096;
+	constant C_JSONFILE_INDEX_MAX : T_UINT16 := 16*C_JSON_INDEX_MAX-1;
 
 	type T_JSON is record
 		Content      : string(1 to T_UINT16'high);
@@ -210,11 +210,7 @@ package body JSON is
 		variable Result : natural;
 		variable Digit  : integer;
 	begin
-		for i in str'range loop
-			Result := Result * 10 + (character'pos(str(i)) - character'pos('0'));
-		end loop;
-		return Result;
---        return integer'value(str);            -- 'value(...) is not supported by Vivado Synth 2014.1
+		return INTEGER'value(str);
 	end function;
 
 	function errorMessage(str : string) return string is
