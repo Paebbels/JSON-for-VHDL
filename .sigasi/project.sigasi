@@ -1,0 +1,13 @@
+{
+	"name": "JSON-for-VHDL",
+	"targets": {
+		"Generic": {
+			// "environment": {
+			// 	"BOARD": "GENERIC",
+			// 	"VENDOR": "GENERIC"
+			// },
+			"command": "cd temp && vsim -do ../regression.tcl",
+			"ignore": ["temp"]
+		}
+	}
+}

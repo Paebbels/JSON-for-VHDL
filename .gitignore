@@ -4,28 +4,35 @@
 ~$*
 
 # ignore Xilinx ISE files
-/Xilinx\ ISE/**/*.*
-/Xilinx\ ISE/**/ise
-!/Xilinx\ ISE/**/*.xise
-!/Xilinx\ ISE/**/iseconfig/filter.filter
+/tests/ISE/**/*.*
+!/tests/ISE/*.xise
+!/tests/ISE/iseconfig/filter.filter
 
 # ignore Xilinx Vivado files
-/Xilinx\ Vivado/**/*.*
-!/Xilinx\ Vivado/**/*.xpr
+/tests/Vivado/**/*.*
+!/tests/Vivado/**/*.xpr
 
 # ignore QuestaSim files
-/QuestaSim/*
-/QuestaSim/**/*.*
-!/QuestaSim/*.cmd
-!/QuestaSim/*.log
+/tests/QuestaSim/*
+/tests/QuestaSim/**/*.*
+!/tests/QuestaSim/*.cmd
+!/tests/QuestaSim/*.log
 
 # ignore GHDL files
-/ghdl/**/*.*
-!/ghdl/*.cmd
-!/ghdl/*.log
+/tests/ghdl/**/*.*
+!/tests/ghdl/*.cmd
+!/tests/ghdl/*.log
+
+# ignore NVC files
+/tests/nvc/**/*.*
+!/tests/nvc/*.cmd
+!/tests/nvc/*.log
+
+# Sigasi files
+/.sigasi/**/*.*
+!/.sigasi/project.sigasi
 
 # general whitelist
-!.publish
 !.git*
 
 *.cf
